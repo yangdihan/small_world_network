@@ -248,6 +248,9 @@ void Network::remove_duplicates(int& n_elems){
 // -----------------------------------------------------------------------
 // void Network::add_long_range_egdes_y(int n_add, float prestretch){
 void Network::add_long_range_egdes_y(int n_add){
+	if (n_add == 0){
+		return;
+	}
 	// Add structured edges in y direction. To do so, first create 2*n_add circles
 	// then find a node in the circle radius (chosen here to be L_STD) and add an edge
 	// between these two nodes
@@ -366,6 +369,9 @@ void Network::add_long_range_egdes_y(int n_add){
 // -----------------------------------------------------------------------
 // void Network::add_long_range_egdes_random(int n_add, float prestretch){
 void Network::add_long_range_egdes_random(int n_add){
+	if (n_add == 0){
+		return;
+	}
 	cout<<"Asked to add "<<n_add<<" more edges!\n";
 	int node1, node2;
 	float s = 0;

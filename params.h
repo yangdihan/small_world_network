@@ -1,24 +1,29 @@
 #ifndef __params__
 #define __params__
 
-#define DIM 2
-#define TIME_STEP 1e-2
-#define SIM_TIME 20
-#define TOL 1e-6
-#define STEPS int(SIM_TIME/TIME_STEP)
-#define L_MEAN 150.0f
-#define L_STD 25.0f
+// FREQUENTLY USED
 #define MAXBOUND_X 50.0f
 #define MAXBOUND_Y 50.0f
+#define TIME_STEP 1e-2
+#define SIM_TIME 20
+#define L_MEAN 150.0f
+#define L_STD 25.0f
+#define FLDR_STRING "test_fix_side"
+//add by Dihan
+#define SIDE_BC false
+#define RANDOM_LONG 0
+#define RANDOM_Y 3
+
+#define DIM 2
+#define TOL 1e-6
+#define STEPS int(SIM_TIME/TIME_STEP)
 #define PAD_X MAXBOUND_X*1.03
 #define PAD_Y MAXBOUND_Y*1.03
 #define SACBONDS false
 #define IMPLEMENT_PBC false
-#define FLDR_STRING "test_fix_side"
 #define CRACKED false
 #define RATE_DAMAGE true
-//add by Dihan
-#define SIDE_BC false
+
 
 #if CRACKED
 #define PROB_REMOVAL 1.0

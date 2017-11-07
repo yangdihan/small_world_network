@@ -93,10 +93,8 @@ int main(int argc, char* argv[]) {
 		bool should_stop = test_network.get_stats();
 		
 		// add by Dihan to try long links
-		//####### for small world test############//
-		// test_network.add_long_range_egdes_random(50);
-		// test_network.add_long_range_egdes_y(4);
-		//#######################################//
+		test_network.add_long_range_egdes_random(RANDOM_LONG);
+		test_network.add_long_range_egdes_y(RANDOM_Y);
 
 		int old_n_edges = test_network.get_current_edges();
 		int curr_n_edges = old_n_edges;
