@@ -17,6 +17,8 @@
 #define FLDR_STRING "test_fix_side"
 #define CRACKED false
 #define RATE_DAMAGE true
+//add by Dihan
+#define SIDE_BC false
 
 #if CRACKED
 #define PROB_REMOVAL 1.0

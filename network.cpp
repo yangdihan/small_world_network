@@ -500,20 +500,29 @@ void Network::load_network(string& fname) {
 
 
 	// moving nodes
-	// n_moving = n_nodes - n_tside - n_bside;
-	n_moving = n_nodes - n_tside - n_bside - n_lside - n_rside + 4;
-	moving_nodes = (int*)malloc(sizeof(int)*n_moving);
-	
 	int c = 0;
-	for(int i =0; i<n_nodes; i++){
-		if(!ismember(i, tsideNodes, n_tside) && !ismember(i, bsideNodes, n_bside) && !ismember(i, lsideNodes, n_tside) && !ismember(i, rsideNodes, n_bside)) {
-		
-		// if(!ismember(i, tsideNodes, n_tside) && !ismember(i, bsideNodes, n_bside)){
-
-			moving_nodes[c] = i;
-			c++;
+	if (SIDE_BC){
+		n_moving = n_nodes - n_tside - n_bside - n_lside - n_rside + 4;
+		moving_nodes = (int*)malloc(sizeof(int)*n_moving);
+		for(int i =0; i<n_nodes; i++){
+			if(!ismember(i, tsideNodes, n_tside) && !ismember(i, bsideNodes, n_bside) && !ismember(i, lsideNodes, n_tside) && !ismember(i, rsideNodes, n_bside)) {
+				moving_nodes[c] = i;
+				c++;
+			}
+		}
+	}else{
+		n_moving = n_nodes - n_tside - n_bside;
+		moving_nodes = (int*)malloc(sizeof(int)*n_moving);
+		for(int i =0; i<n_nodes; i++){
+			if(!ismember(i, tsideNodes, n_tside) && !ismember(i, bsideNodes, n_bside)){
+				moving_nodes[c] = i;
+				c++;
+			}
 		}
 	}
+	
+	
+
 	cout<<"We have "<<c<<" moving nodes\n";
 
 
@@ -1119,34 +1128,34 @@ void Network::move_top_plate(){
 		}
 	}
 	// add by dihan for side roller:
-	int top_first_node = tsideNodes[0];
-	float cur_height = R[top_first_node*2+1];
-	float total_disp = TIME_STEP*vel[1];
-	float perc_disp = total_disp/cur_height;
-	for(int i = 0; i<n_lside; i++){
-		node = lsideNodes[i];
-		// #pragma unroll
-		if (R[node*2 + 1] == cur_height){
-			R[node*2 + 1] += 0;
-			cout << "left: already top node" << endl;
-		}else{
-			R[node*2 + 1] += R[node*2 + 1]*perc_disp; 
-			cout << "left: add percentage" << endl;
-		}	
+	if (SIDE_BC){
+		int top_first_node = tsideNodes[0];
+		float cur_height = R[top_first_node*2+1];
+		float total_disp = TIME_STEP*vel[1];
+		float perc_disp = total_disp/cur_height;
+		for(int i = 0; i<n_lside; i++){
+			node = lsideNodes[i];
+			// #pragma unroll
+			if (R[node*2 + 1] == cur_height){
+				R[node*2 + 1] += 0;
+				// cout << "left: already top node" << endl;
+			}else{
+				R[node*2 + 1] += R[node*2 + 1]*perc_disp; 
+				// cout << "left: add percentage" << endl;
+			}	
+		}
+		for(int i = 0; i<n_rside; i++){
+			node = rsideNodes[i];
+			// #pragma unroll
+			if (R[node*2 + 1] == cur_height){
+				R[node*2 + 1] += 0;
+				// cout << "right: already top node" << endl;
+			}else{
+				R[node*2 + 1] += R[node*2 + 1]*perc_disp;
+				// cout << "right: add percentage" << endl;
+			} 	
+		}
 	}
-	for(int i = 0; i<n_rside; i++){
-		node = rsideNodes[i];
-		// #pragma unroll
-		if (R[node*2 + 1] == cur_height){
-			R[node*2 + 1] += 0;
-			cout << "right: already top node" << endl;
-		}else{
-			R[node*2 + 1] += R[node*2 + 1]*perc_disp;
-			cout << "right: add percentage" << endl;
-		} 	
-	}
-
-
 }
 
 // ----------------------------------------------------------------------- 
