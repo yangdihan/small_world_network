@@ -2,7 +2,7 @@
 #define __params__
 
 #define DIM 2
-#define TIME_STEP 1e-3
+#define TIME_STEP 1e-2
 #define SIM_TIME 20
 #define TOL 1e-6
 #define STEPS int(SIM_TIME/TIME_STEP)
@@ -14,7 +14,7 @@
 #define PAD_Y MAXBOUND_Y*1.03
 #define SACBONDS false
 #define IMPLEMENT_PBC false
-#define FLDR_STRING "test y long"
+#define FLDR_STRING "test_fix_side"
 #define CRACKED false
 #define RATE_DAMAGE true
 

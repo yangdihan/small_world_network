@@ -95,7 +95,7 @@ int main(int argc, char* argv[]) {
 		// add by Dihan to try long links
 		//####### for small world test############//
 		// test_network.add_long_range_egdes_random(50);
-		test_network.add_long_range_egdes_y(4);
+		// test_network.add_long_range_egdes_y(4);
 		//#######################################//
 
 		int old_n_edges = test_network.get_current_edges();
