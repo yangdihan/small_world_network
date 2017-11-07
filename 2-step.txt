@@ -1,0 +1,2 @@
+./compile.sh test
+./test template2d_z4.msh 0 
