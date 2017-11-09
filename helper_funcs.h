@@ -182,6 +182,24 @@ void write_edge_number(string& fname2, t* remain_chains, int row){
 	cout<<"finish store edge numbers "<<fname2<<"!\n";
 }
 
+template <typename t>
+void write_long_link(string& fname3, t* long_link_forces, t* long_link_node_pos, int row){
+	ofstream logger;
+	logger.open(fname3, ios::trunc|ios_base::out);
+	int num = RANDOM_LONG+RANDOM_Y;
+	for(int j = 0; j< row; j++){
+		for (int i=0; i<num; i++){
+			logger<< long_link_forces[j*num + i] <<"\t";
+			// logger<< long_link_forces[j*num*2 + i*2 + 1] <<"\t";
+			logger<< long_link_node_pos[j*num + i] << "\t";
+		}
+		logger << "\n";
+	}
+	logger.close();
+	cout<<"finish store long link info "<<fname3<<"!\n";
+}
+
+
 
 inline float kf(float force){
 	return af*expf(force*delxf/kB/T);

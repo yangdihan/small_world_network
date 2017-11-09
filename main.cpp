@@ -103,13 +103,21 @@ int main(int argc, char* argv[]) {
 
 		if(should_stop){cout<<"Simulation needs to stop!\n";return 0;}
 		float* plate_forces;
-		int* remain_chains;
 
 		plate_forces = (float*)malloc(sizeof(float)*DIM*STEPS);
-		remain_chains = (int*)malloc(sizeof(int)*STEPS);
-
 		memset(plate_forces, 0.0, STEPS*DIM*sizeof(float));
+		// add by Dihan
+		int* remain_chains;
+		float* long_link_forces;
+		float* long_link_node_pos;
+		remain_chains = (int*)malloc(sizeof(int)*STEPS);
 		memset(remain_chains, 0, STEPS*sizeof(int));
+
+		long_link_forces = (float*)malloc(sizeof(float)*(RANDOM_LONG+RANDOM_Y)*STEPS);
+		memset(long_link_forces, 0.0, sizeof(float)*(RANDOM_LONG+RANDOM_Y)*STEPS);
+		long_link_node_pos = (float*)malloc(sizeof(float)*(RANDOM_LONG+RANDOM_Y)*STEPS);
+		memset(long_link_node_pos, 0.0, sizeof(float)*(RANDOM_LONG+RANDOM_Y)*STEPS);
+
 
 		test_network.plotNetwork(0, true);
 
@@ -124,20 +132,20 @@ int main(int argc, char* argv[]) {
 		
 		for(int i = 1; i<STEPS; i++ ){
 			// The three lines that do all the work
+			test_network.get_long_link_status(long_link_forces, long_link_node_pos, i);
 			test_network.optimize();
 			test_network.move_top_plate();
 
 			test_network.get_plate_forces(plate_forces, i);
+			// add by Dihan
+			
 			curr_n_edges = test_network.get_current_edges();
-			// cout << "####" << curr_n_edges << "####" << endl;
-			// test_network.get_current_edges(remain_chains, i);
 			test_network.get_edge_number(remain_chains, i, curr_n_edges);
 			
 			// But add more lines, just to show-off.
 			// first 100 step
 			if (i<=100){
 				should_stop = test_network.get_stats();
-				// curr_n_edges = test_network.get_current_edges();
 				
 				if(curr_n_edges<=old_n_edges){
 					test_network.plotNetwork(i, false);
@@ -225,16 +233,19 @@ int main(int argc, char* argv[]) {
 		string sb = SACBONDS ? "true" : "false" ; 
 		string fname = FLDR_STRING + std::to_string(L_STD/L_MEAN) + "_" + sb + ".txt";
 		string fname2 = FLDR_STRING + std::to_string(L_STD/L_MEAN) + "_" + "remain_chains" + ".txt";
+		string fname3 = "add_long_link_info.txt";
 		write_to_file<float>(fname, plate_forces, STEPS, DIM);
 
 
-		// for(int j = 0; j< STEPS; j++){
-		// 	cout << "#####" << remain_chains[j] << endl;
-		// }
+		// add by Dihan
 		write_edge_number<int>(fname2, remain_chains, STEPS);
+
+		write_long_link<float>(fname3, long_link_forces, long_link_node_pos, STEPS);
 
 		free(plate_forces);
 		free(remain_chains);
+		free(long_link_forces);
+		free(long_link_node_pos);
 	}
 	else {
 

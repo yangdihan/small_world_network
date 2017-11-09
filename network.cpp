@@ -336,8 +336,10 @@ void Network::add_long_range_egdes_y(int n_add){
 		// update PBC;
 
 		//dihan add this :
-		logger<< node_per_circle[i] <<"\t";
-		logger<< node_per_circle[i + n_add] <<"\t";
+		logger<< R[node_per_circle[i]*DIM + 0] <<"\t";
+		logger<< R[node_per_circle[i]*DIM + 1] <<"\t";
+		logger<< R[(node_per_circle[i + n_add])*DIM + 0] <<"\t";
+		logger<< R[(node_per_circle[i + n_add])*DIM + 1] <<"\t";
 		logger<< s <<"\t";
 		logger<< L[n_elems];
 		logger<<"\n";
@@ -380,22 +382,6 @@ void Network::add_long_range_egdes_random(int n_add){
 		cout<<"You're asking for too many long range bonds,"
 				" can't do it! I will add none and continue..."<<endl;
 	}
-
-	// if(prestretch < 0.01 || prestretch > 0.99){
-	// 	cout<< "Value for prestretch needs to be between 0.01 and 0.99\n";
-	// 	prestretch = 0.25;
-	// }
-// cout << this->meanX << endl;
-// cout << this->meanXL << endl;
-// srand(time(NULL));
-//     for (int i=0; i<n_add; i++){
-//     	// while(s<2*this->meanX){ 
-// 	    	node1 = rand()%(n_nodes - 4) + 4;
-// 			node2 = rand()%(n_nodes - 4) + 4;
-// 			s = dist(&R[node1*DIM], &R[node2*DIM]);
-		// }
-    	// cout << node1 << endl;
-    	// cout << node2 << endl;
 	string fname = "add_link_tracker.txt";
 	ofstream logger;
 	logger.open(fname, ios::trunc|ios_base::out);
@@ -406,27 +392,24 @@ void Network::add_long_range_egdes_random(int n_add){
 	for(int i = 0; i < n_add; i++){
 		// while(s<L_MEAN/4 || s>L_MEAN){ 
 		while(s<2*this->meanX){ 
-			// L_MEAN/4, L_MEAN is arbitrary threshold to keep the edge long range
-
-			// random number between [min; max] 
-			// min = 4 (all corner nodes); max = n_nodes - 1
-
 			node1 = rand()%(n_nodes - 4) + 4;
 			node2 = rand()%(n_nodes - 4) + 4;
 		
 			s = dist(&R[node1*DIM], &R[node2*DIM]);
-			// 			cout << "reach " << endl;
-			// cout << node1 << endl;
-			// cout << node2 << endl;
-			// cout << s << endl;
 		}
-
-
-		cout<<"Adding edge between "<<node1<<", "<<node2<<endl;
 
 		// add nodes to edges array
 		edges[n_elems*2] = node1;
 		edges[n_elems*2 + 1] = node2;
+
+
+		float x1 = R[node1*DIM+0];
+		float y1 = R[node1*DIM+1];
+		float x2 = R[node2*DIM+0];
+		float y2 = R[node2*DIM+1];
+		float s_test = sqrt((x2-x1)*(x2-x1) + (y2-y1)*(y2-y1));
+
+
 
 		// update the contour lengths according to position
 		L[n_elems] = s/this->meanXL;
@@ -437,8 +420,10 @@ void Network::add_long_range_egdes_random(int n_add){
 		// update PBC;
 
 		//dihan add this :
-		logger<< node1 <<"\t";
-		logger<< node2 <<"\t";
+		logger<< R[node1*DIM + 0] <<"\t";
+		logger<< R[node1*DIM + 1] <<"\t";
+		logger<< R[node2*DIM + 0] <<"\t";
+		logger<< R[node2*DIM + 1] <<"\t";
 		logger<< s <<"\t";
 		logger<< L[n_elems];
 		logger<<"\n";
@@ -448,7 +433,12 @@ void Network::add_long_range_egdes_random(int n_add){
 
 		// update damage
 		damage[n_elems] = 0;
-
+		// cout<<"Adding edge between "<<node1<<", "<<node2<<endl;
+		// cout<<"should be same as "<<edges[n_elems*2]<<", "<<edges[n_elems*2 + 1]<<endl;
+		// cout << "adding edges # is "<<n_elems*2<<endl;
+		// cout << "adding edges # is "<<n_elems*2+1<<endl;
+		// cout << "node to node distance is "<< dist(&R[node1*DIM], &R[node2*DIM]) << endl;
+		// cout << "calculate by hand "<< s_test << endl;
 		// increment n_elems
 		n_elems++;
 
@@ -958,8 +948,6 @@ int Network::get_current_edges(){
 			n_elems_current += 1;
 		}
 	}
-
-	// cout<<"Number of edges are "<<n_elems_current<<"\n";
 	return n_elems_current;
 }
 
@@ -1063,16 +1051,16 @@ bool Network::get_stats(){
 	var_t /= c;
 	var_t -= mean_t*mean_t;
 	cout<<"Number of edges: "<<c<<endl;
-	cout<<"Number of edges with x>0.99L: "<<short_L<<endl;
+	// cout<<"Number of edges with x>0.99L: "<<short_L<<endl;
 	cout<<"node-node distance mean: "<<mean_x<<endl;
 	this->meanX = mean_x;
-	cout<<"node-node distance std_dev: "<<sqrt(var_x)<<endl;
-	cout<<"node-node distance max: "<<max_x<<endl;
+	// cout<<"node-node distance std_dev: "<<sqrt(var_x)<<endl;
+	// cout<<"node-node distance max: "<<max_x<<endl;
 	cout<<"\n";
 	cout<<"node-node x/L mean: "<<mean_t<<endl;
 	this->meanXL = mean_t;
-	cout<<"node-node x/L std_dev: "<<sqrt(var_t)<<endl;	
-	cout<<"node-node x/L max: "<<max_t<<endl;
+	// cout<<"node-node x/L std_dev: "<<sqrt(var_t)<<endl;	
+	// cout<<"node-node x/L max: "<<max_t<<endl;
 
 
 	if((float)c/(float)n_elems < 0.02){
@@ -1134,6 +1122,17 @@ void Network::move_top_plate(){
 		}
 	}
 	// add by dihan for side roller:
+	// if (ROLLER){
+	// 	for(int i = 0; i<n_lside; i++){
+	// 		node = lsideNodes[i];
+	// 		R[node*2] = 0;
+	// 	}
+	// 	for(int i = 0; i<n_rside; i++){
+	// 		node = rsideNodes[i];
+	// 		R[node*2] = MAXBOUND_Y;
+	// 	}
+	// }
+
 	if (SIDE_BC){
 		int top_first_node = tsideNodes[0];
 		float cur_height = R[top_first_node*2+1];
@@ -1192,7 +1191,15 @@ void Network::optimize(float eta, float alpha, int max_iter){
 					rms_history[id*DIM + d] = alpha*rms_history[id*DIM + d] + (1-alpha)*g*g;
 					delR = sqrt(1.0/(rms_history[id*DIM + d] + TOL))*eta*g;
 					R[node*DIM + d] += delR;
-				}		
+					
+				}
+				// add by Dihan
+				if (ROLLER && (ismember(node, lsideNodes, n_lside))) {
+					R[node*2] = 0;	
+				}
+				if (ROLLER && (ismember(node, rsideNodes, n_rside))) {
+					R[node*2] = MAXBOUND_Y;	
+				}	
 			}
 		}
 		else{
@@ -1223,6 +1230,46 @@ void Network::get_plate_forces(float* plate_forces, int iter){
 		}
 	}
 }
+
+
+void Network::get_long_link_status(float* long_link_forces, float* long_link_node_pos, int iter){
+	int node1;
+	int node2;
+	int num = RANDOM_LONG+RANDOM_Y;
+	float s;
+	float Len;
+	float force;
+	//might need to change when 3D:
+	// float* pos1 = new float[DIM];
+	// float* pos2 = new float[DIM];
+	for (int i=num; i>0; i--){
+		node1 = edges[(n_elems-i)*2+0];
+		node2 = edges[(n_elems-i)*2+1];
+
+		Len = L[n_elems-i];
+
+		s = dist(&R[node1*DIM], &R[node2*DIM]);
+		// s = sqrt((x2-x1)*(x2-x1) + (y2-y1)*(y2-y1));
+		force = force_wlc(s, Len);
+		long_link_node_pos[iter*num + (num-i)] = s;
+		long_link_forces[iter*num + (num-i)] = force;
+	}
+
+		float x1 = R[node1*DIM+0];
+		float y1 = R[node1*DIM+1];
+		float x2 = R[node2*DIM+0];
+		float y2 = R[node2*DIM+1];
+		float s_test = sqrt((x2-x1)*(x2-x1) + (y2-y1)*(y2-y1));
+		// int i = 1;
+		// cout<<"Adding edge between "<<node1<<", "<<node2<<endl;
+		// cout<<"should be same as "<<edges[(n_elems-i)*2+0]<<", "<<edges[(n_elems-i)*2+1]<<endl;
+		// cout << "adding edges # is "<< (n_elems-i)*2+0 <<endl;
+		// cout << "adding edges # is "<< (n_elems-i)*2+1 <<endl;
+		// cout << "node to node distance is "<< dist(&R[node1*DIM], &R[node2*DIM]) << endl;
+		// cout << "calculate by hand "<< s_test << endl;
+}
+
+
 
 // ----------------------------------------------------------------------- 
 /// \brief Dumps the network information for an iteration in a file. 

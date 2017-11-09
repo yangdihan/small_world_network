@@ -11,8 +11,9 @@
 #define FLDR_STRING "test_fix_side"
 //add by Dihan
 #define SIDE_BC false
-#define RANDOM_LONG 0
-#define RANDOM_Y 3
+#define ROLLER true
+#define RANDOM_LONG 3
+#define RANDOM_Y 0
 
 #define DIM 2
 #define TOL 1e-6
