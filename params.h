@@ -2,17 +2,17 @@
 #define __params__
 
 // FREQUENTLY USED
-#define MAXBOUND_X 50.0f
-#define MAXBOUND_Y 50.0f
+#define MAXBOUND_X 500.0f
+#define MAXBOUND_Y 150.0f
 #define TIME_STEP 1e-2
 #define SIM_TIME 20
 #define L_MEAN 150.0f
 #define L_STD 25.0f
-#define FLDR_STRING "test_fix_side"
+#define FLDR_STRING "test_another_long_crack"
 //add by Dihan
 #define SIDE_BC false
-#define ROLLER true
-#define RANDOM_LONG 3
+#define ROLLER false
+#define RANDOM_LONG 0
 #define RANDOM_Y 0
 
 #define DIM 2

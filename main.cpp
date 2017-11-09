@@ -93,8 +93,16 @@ int main(int argc, char* argv[]) {
 		bool should_stop = test_network.get_stats();
 		
 		// add by Dihan to try long links
-		test_network.add_long_range_egdes_random(RANDOM_LONG);
-		test_network.add_long_range_egdes_y(RANDOM_Y);
+		float* long_link_forces;
+		float* long_link_node_pos;
+		if (RANDOM_LONG+RANDOM_Y > 0){
+			test_network.add_long_range_egdes_random(RANDOM_LONG);
+			test_network.add_long_range_egdes_y(RANDOM_Y);
+			long_link_forces = (float*)malloc(sizeof(float)*(RANDOM_LONG+RANDOM_Y)*STEPS);
+			memset(long_link_forces, 0.0, sizeof(float)*(RANDOM_LONG+RANDOM_Y)*STEPS);
+			long_link_node_pos = (float*)malloc(sizeof(float)*(RANDOM_LONG+RANDOM_Y)*STEPS);
+			memset(long_link_node_pos, 0.0, sizeof(float)*(RANDOM_LONG+RANDOM_Y)*STEPS);
+		}
 
 		int old_n_edges = test_network.get_current_edges();
 		int curr_n_edges = old_n_edges;
@@ -108,16 +116,8 @@ int main(int argc, char* argv[]) {
 		memset(plate_forces, 0.0, STEPS*DIM*sizeof(float));
 		// add by Dihan
 		int* remain_chains;
-		float* long_link_forces;
-		float* long_link_node_pos;
 		remain_chains = (int*)malloc(sizeof(int)*STEPS);
 		memset(remain_chains, 0, STEPS*sizeof(int));
-
-		long_link_forces = (float*)malloc(sizeof(float)*(RANDOM_LONG+RANDOM_Y)*STEPS);
-		memset(long_link_forces, 0.0, sizeof(float)*(RANDOM_LONG+RANDOM_Y)*STEPS);
-		long_link_node_pos = (float*)malloc(sizeof(float)*(RANDOM_LONG+RANDOM_Y)*STEPS);
-		memset(long_link_node_pos, 0.0, sizeof(float)*(RANDOM_LONG+RANDOM_Y)*STEPS);
-
 
 		test_network.plotNetwork(0, true);
 
@@ -132,7 +132,9 @@ int main(int argc, char* argv[]) {
 		
 		for(int i = 1; i<STEPS; i++ ){
 			// The three lines that do all the work
-			test_network.get_long_link_status(long_link_forces, long_link_node_pos, i);
+			if (RANDOM_LONG+RANDOM_Y > 0){
+				test_network.get_long_link_status(long_link_forces, long_link_node_pos, i);
+			}
 			test_network.optimize();
 			test_network.move_top_plate();
 
@@ -147,10 +149,12 @@ int main(int argc, char* argv[]) {
 			if (i<=100){
 				should_stop = test_network.get_stats();
 				
-				if(curr_n_edges<=old_n_edges){
-					test_network.plotNetwork(i, false);
-					test_network.dump(i);
-				}
+				// if(curr_n_edges<=old_n_edges){
+				// 	test_network.plotNetwork(i, false);
+				// 	test_network.dump(i);
+				// }
+				test_network.plotNetwork(i, false);
+				test_network.dump(i);
 				if(should_stop){
 					break;
 				}
@@ -174,10 +178,12 @@ int main(int argc, char* argv[]) {
 				should_stop = test_network.get_stats();
 				// curr_n_edges = test_network.get_current_edges();
 				
-				if(curr_n_edges<=old_n_edges){
-					test_network.plotNetwork(i, false);
-					test_network.dump(i);
-				}
+				// if(curr_n_edges<=old_n_edges){
+				// 	test_network.plotNetwork(i, false);
+				// 	test_network.dump(i);
+				// }
+				test_network.plotNetwork(i, false);
+				test_network.dump(i);
 				if(should_stop){
 					break;
 				}
@@ -204,10 +210,12 @@ int main(int argc, char* argv[]) {
 				should_stop = test_network.get_stats();
 				// curr_n_edges = test_network.get_current_edges();
 				
-				if(curr_n_edges<=old_n_edges){
-					test_network.plotNetwork(i, false);
-					test_network.dump(i);
-				}
+				// if(curr_n_edges<=old_n_edges){
+				// 	test_network.plotNetwork(i, false);
+				// 	test_network.dump(i);
+				// }
+				test_network.plotNetwork(i, false);
+				test_network.dump(i);
 				if(should_stop){
 					break;
 				}
@@ -240,12 +248,15 @@ int main(int argc, char* argv[]) {
 		// add by Dihan
 		write_edge_number<int>(fname2, remain_chains, STEPS);
 
-		write_long_link<float>(fname3, long_link_forces, long_link_node_pos, STEPS);
+		if (RANDOM_LONG+RANDOM_Y > 0){
+			write_long_link<float>(fname3, long_link_forces, long_link_node_pos, STEPS);
+			free(long_link_forces);
+			free(long_link_node_pos);
+		}
 
 		free(plate_forces);
 		free(remain_chains);
-		free(long_link_forces);
-		free(long_link_node_pos);
+
 	}
 	else {
 

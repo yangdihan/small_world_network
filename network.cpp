@@ -905,13 +905,13 @@ void Network::plotNetwork(int iter_step, bool first_time){
 	// float aspect_ratio = 8*(MAXBOUND_X)/(R[tsideNodes[0]*DIM+1]); 
 
 	stringstream convert;
-	// convert<<"[-100:"<<MAXBOUND_X+100<<"]";
+
 	convert<<"[-5:"<<MAXBOUND_X+5<<"]";
 	string xrange = convert.str();
 	convert.str(std::string());
 	
 	int x_res = 1280;
-	convert<<x_res<<", "<<int(x_res/aspect_ratio);
+	convert<<x_res<<", "<<int((x_res-410)/aspect_ratio+410);
 	string png_size = convert.str();
 	convert.str(std::string());
 
@@ -930,7 +930,7 @@ void Network::plotNetwork(int iter_step, bool first_time){
 	gnu.cmd("set term png size " + png_size);
 	gnu.cmd("set output '"+ path + "'");
 	gnu.cmd("replot");
-	gnu.cmd("set term x11");
+	// gnu.cmd("set term x11");
 	gnu.reset_plot();
 	
 }
@@ -1198,7 +1198,7 @@ void Network::optimize(float eta, float alpha, int max_iter){
 					R[node*2] = 0;	
 				}
 				if (ROLLER && (ismember(node, rsideNodes, n_rside))) {
-					R[node*2] = MAXBOUND_Y;	
+					R[node*2] = MAXBOUND_X;	
 				}	
 			}
 		}
