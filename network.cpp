@@ -309,7 +309,7 @@ void Network::add_long_range_egdes_y(int n_add){
 
 	float s; // will store distances
 	//Add edges between selected nodes
-	string fname = "add_link_tracker_y.txt";
+	string fname = std::string(FLDR_STRING) + "/add_link_tracker_y.txt";
 	ofstream logger;
 	logger.open(fname, ios::trunc|ios_base::out);
 	logger<< this->meanX <<"\t";
@@ -382,7 +382,7 @@ void Network::add_long_range_egdes_random(int n_add){
 		cout<<"You're asking for too many long range bonds,"
 				" can't do it! I will add none and continue..."<<endl;
 	}
-	string fname = "add_link_tracker.txt";
+	string fname = std::string(FLDR_STRING) + "/add_link_tracker.txt";
 	ofstream logger;
 	logger.open(fname, ios::trunc|ios_base::out);
 	logger<< this->meanX <<"\t";
@@ -797,6 +797,45 @@ void Network::apply_crack(Cracklist & alist) {
 }
 
 
+void pngPlotHelper(string png_size, string png_path, string xrange, string fname, int iter_step){
+	Gnuplot gnu;
+	gnu.cmd("set xrange " + xrange);
+	gnu.cmd("load 'viridis.pal'");
+	gnu.cmd("set key off");
+	gnu.cmd("set colorbox default vertical");
+	gnu.cmd("set cbrange [0:1]");
+	gnu.cmd("set cbtics ('0.0' 0.0,'1.0' 1.0) offset 0,0.5 scale 0");
+	gnu.cmd("set size ratio -1"); // to have the same scale on x and y axes
+	gnu.cmd("plot '" + fname + "' every ::0::1 u 1:2:3 w l lc palette lw 2 title '"+\
+		std::to_string(iter_step)+"'");
+	gnu.cmd("set term png size " + png_size);
+	gnu.cmd("set output '"+ png_path + "'");
+
+	gnu.cmd("replot");
+	// gnu.cmd("set term x11");
+	gnu.reset_plot();
+}
+
+void epsPlotHelper(string eps_size, string eps_path, string xrange, string fname, int iter_step){
+	Gnuplot gnu;
+	gnu.cmd("set xrange " + xrange);
+	gnu.cmd("load 'viridis.pal'");
+	gnu.cmd("set key off");
+	gnu.cmd("set colorbox default vertical");
+	gnu.cmd("set cbrange [0:1]");
+	gnu.cmd("set cbtics ('0.0' 0.0,'1.0' 1.0) offset 0,0.5 scale 0");
+	gnu.cmd("set size ratio -1"); // to have the same scale on x and y axes
+	gnu.cmd("plot '" + fname + "' every ::0::1 u 1:2:3 w l lc palette lw 2 title '"+\
+		std::to_string(iter_step)+"'");
+	// gnu.cmd("set term png size " + png_size);
+	// gnu.cmd("set terminal postscript eps enhanced size "+png_size);
+	gnu.cmd("set terminal postscript eps size "+eps_size);
+	gnu.cmd("set output '"+ eps_path + "'");
+	gnu.cmd("replot");
+	// gnu.cmd("set term x11");
+	gnu.reset_plot();
+}
+
 // ----------------------------------------------------------------------- 
 /// \brief Plots the graph of the network. Note the edges in the graph just
 /// signify connection between two nodes and do not represent the actual 
@@ -813,7 +852,7 @@ void Network::apply_crack(Cracklist & alist) {
 void Network::plotNetwork(int iter_step, bool first_time){
 	ofstream f;
 	Gnuplot gnu;
-	string fname = "data" + std::string(FLDR_STRING) + ".txt";
+	string fname = std::string(FLDR_STRING) + "/" + "data_for_plot.txt";
 	float c;
 	f.open(fname,std::ofstream::out | std::ofstream::trunc);
 	// std::default_random_engine seed;
@@ -915,23 +954,40 @@ void Network::plotNetwork(int iter_step, bool first_time){
 	string png_size = convert.str();
 	convert.str(std::string());
 
-	string bs = "/";
-	string path = FLDR_STRING + bs + std::to_string(iter_step) + ".png";
+
+	int eps_x_res = 40;
+	int eps_y_res = eps_x_res/aspect_ratio;
+	convert<<eps_x_res<<", "<<eps_y_res;
+	string eps_size = convert.str();
+	convert.str(std::string());
+
+	// string bs = "/";
+	string eps_path = std::string(FLDR_STRING) + "/graphs/" + std::to_string(iter_step) + ".eps";
+	string png_path = std::string(FLDR_STRING) + "/" + std::to_string(iter_step) + ".png";
 	
-	gnu.cmd("set xrange " + xrange);
-	gnu.cmd("load 'viridis.pal'");
-	gnu.cmd("set key off");
-	gnu.cmd("set colorbox default vertical");
-	gnu.cmd("set cbrange [0:1]");
-	gnu.cmd("set cbtics ('0.0' 0.0,'1.0' 1.0) offset 0,0.5 scale 0");
-	gnu.cmd("set size ratio -1"); // to have the same scale on x and y axes
-	gnu.cmd("plot '" + fname + "' every ::0::1 u 1:2:3 w l lc palette lw 2 title '"+\
-		std::to_string(iter_step)+"'");
-	gnu.cmd("set term png size " + png_size);
-	gnu.cmd("set output '"+ path + "'");
-	gnu.cmd("replot");
-	// gnu.cmd("set term x11");
-	gnu.reset_plot();
+
+	pngPlotHelper(png_size, png_path, xrange, fname, iter_step);
+	epsPlotHelper(eps_size, eps_path, xrange, fname, iter_step);
+	// gnu.cmd("set xrange " + xrange);
+	// gnu.cmd("load 'viridis.pal'");
+	// gnu.cmd("set key off");
+	// gnu.cmd("set colorbox default vertical");
+	// gnu.cmd("set cbrange [0:1]");
+	// gnu.cmd("set cbtics ('0.0' 0.0,'1.0' 1.0) offset 0,0.5 scale 0");
+	// gnu.cmd("set size ratio -1"); // to have the same scale on x and y axes
+	// gnu.cmd("plot '" + fname + "' every ::0::1 u 1:2:3 w l lc palette lw 2 title '"+\
+	// 	std::to_string(iter_step)+"'");
+	// // gnu.cmd("set term png size " + png_size);
+	// // gnu.cmd("set terminal postscript eps enhanced size "+png_size);
+	// gnu.cmd("set terminal postscript eps size "+eps_size);
+	// gnu.cmd("set output '"+ eps_path + "'");
+
+	// gnu.cmd("set term png size " + png_size);
+	// gnu.cmd("set output '"+ png_path + "'");
+
+	// gnu.cmd("replot");
+	// // gnu.cmd("set term x11");
+	// gnu.reset_plot();
 	
 }
 
@@ -1289,7 +1345,7 @@ void Network::dump(int iter, bool first_time){
 			fname = fname + "_" + std::to_string(c);
 		}
 	}
-	fname = fname+".txt";
+	fname = std::string(FLDR_STRING) + "/" + fname+".txt";
 	logger.open(fname, ios_base::app);
 
 	if(first_time){

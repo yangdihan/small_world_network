@@ -199,7 +199,13 @@ void write_long_link(string& fname3, t* long_link_forces, t* long_link_node_pos,
 	cout<<"finish store long link info "<<fname3<<"!\n";
 }
 
-
+// void animation(){
+// 	Gnuplot gnu;
+// 	gnu.cmd(ENCODER = system('which mencoder'));
+// 	if (strlen(ENCODER)==0) print '=== mencoder not found ===';
+// 	gnu.cmd(std::string(FLDR_STRING)+'/*.png -mf fps=25:type=png -ovc lavc -lavcopts vcodec=mpeg4:mbd=2:trell -oac copy -o animation.avi');
+// 	// system(CMD)
+// }
 
 inline float kf(float force){
 	return af*expf(force*delxf/kB/T);

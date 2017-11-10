@@ -122,7 +122,7 @@ int main(int argc, char* argv[]) {
 		test_network.plotNetwork(0, true);
 
 		// 
-		test_network.dump(0, true);
+		// test_network.dump(0, true);
 
 		// For time is endless but your time...not so much!  
 		clock_t t = clock();
@@ -154,7 +154,7 @@ int main(int argc, char* argv[]) {
 				// 	test_network.dump(i);
 				// }
 				test_network.plotNetwork(i, false);
-				test_network.dump(i);
+				// test_network.dump(i);
 				if(should_stop){
 					break;
 				}
@@ -183,7 +183,7 @@ int main(int argc, char* argv[]) {
 				// 	test_network.dump(i);
 				// }
 				test_network.plotNetwork(i, false);
-				test_network.dump(i);
+				// test_network.dump(i);
 				if(should_stop){
 					break;
 				}
@@ -215,7 +215,7 @@ int main(int argc, char* argv[]) {
 				// 	test_network.dump(i);
 				// }
 				test_network.plotNetwork(i, false);
-				test_network.dump(i);
+				// test_network.dump(i);
 				if(should_stop){
 					break;
 				}
@@ -239,9 +239,9 @@ int main(int argc, char* argv[]) {
 
 		// For names allow unique identification. Well, almost! 
 		string sb = SACBONDS ? "true" : "false" ; 
-		string fname = FLDR_STRING + std::to_string(L_STD/L_MEAN) + "_" + sb + ".txt";
-		string fname2 = FLDR_STRING + std::to_string(L_STD/L_MEAN) + "_" + "remain_chains" + ".txt";
-		string fname3 = "add_long_link_info.txt";
+		string fname = std::string(FLDR_STRING) + "/" + std::to_string(L_STD/L_MEAN) + "_" + sb + ".txt";
+		string fname2 = std::string(FLDR_STRING) + "/" + std::to_string(L_STD/L_MEAN) + "_" + "remain_chains" + ".txt";
+		string fname3 = std::string(FLDR_STRING) + "/" + "add_long_link_info.txt";
 		write_to_file<float>(fname, plate_forces, STEPS, DIM);
 
 
@@ -256,6 +256,7 @@ int main(int argc, char* argv[]) {
 
 		free(plate_forces);
 		free(remain_chains);
+		// animation();
 
 	}
 	else {

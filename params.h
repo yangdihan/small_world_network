@@ -3,15 +3,15 @@
 
 // FREQUENTLY USED
 #define MAXBOUND_X 500.0f
-#define MAXBOUND_Y 150.0f
+#define MAXBOUND_Y 1000.0f
 #define TIME_STEP 1e-2
 #define SIM_TIME 20
 #define L_MEAN 150.0f
 #define L_STD 25.0f
-#define FLDR_STRING "test_another_long_crack"
+#define FLDR_STRING "demo/demo_long_crack_fix_BC"
 //add by Dihan
 #define SIDE_BC false
-#define ROLLER false
+#define ROLLER true
 #define RANDOM_LONG 0
 #define RANDOM_Y 0
 

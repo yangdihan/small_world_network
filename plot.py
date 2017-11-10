@@ -2,8 +2,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 ############# change #################
-fname = "50_50_ms_10_add_0_test20.166667_false"
-fname2 = "50_50_ms_10_add_0_test20.166667_remain_chains"
+fname = "0.166667_false"
+fname2 = "0.166667_remain_chains"
 L_origin = 50
 TIME_STEP = 1e-2
 vel = 10.0
@@ -61,8 +61,11 @@ stretch_max_f = round(stretch1[stress.index(maxF)],2)
 
 #zoom in at peak
 critical_index = stress.index(maxF)
-start_index = critical_index-int(0.5/TIME_STEP)
-end_index = critical_index+10
+# start_index = critical_index-int(0.5/TIME_STEP)
+# end_index = critical_index+10
+start_index = int(0.9*critical_index)
+# end_index = int((critical_index+len(stretch1))/3)
+end_index = critical_index+int(0.3*(len(stretch2)-critical_index))
 stress_d = []
 remain_d = []
 stretch_d = []
