@@ -8,6 +8,7 @@ This file implements all functions defined in header network.h
 #include "crack.h"
 #include <fstream>
 #include <sstream>
+#include <iomanip>
 // ----------------------------------------------------------------------- 
 /// \brief Default constructor
 // ----------------------------------------------------------------------- 
@@ -797,7 +798,7 @@ void Network::apply_crack(Cracklist & alist) {
 }
 
 
-void pngPlotHelper(string png_size, string png_path, string xrange, string fname, int iter_step){
+void pngPlotHelper(string png_size, string png_path, string xrange, string fname, string pic_name){
 	Gnuplot gnu;
 	gnu.cmd("set xrange " + xrange);
 	gnu.cmd("load 'viridis.pal'");
@@ -807,7 +808,7 @@ void pngPlotHelper(string png_size, string png_path, string xrange, string fname
 	gnu.cmd("set cbtics ('0.0' 0.0,'1.0' 1.0) offset 0,0.5 scale 0");
 	gnu.cmd("set size ratio -1"); // to have the same scale on x and y axes
 	gnu.cmd("plot '" + fname + "' every ::0::1 u 1:2:3 w l lc palette lw 2 title '"+\
-		std::to_string(iter_step)+"'");
+		pic_name+"'");
 	gnu.cmd("set term png size " + png_size);
 	gnu.cmd("set output '"+ png_path + "'");
 
@@ -816,7 +817,7 @@ void pngPlotHelper(string png_size, string png_path, string xrange, string fname
 	gnu.reset_plot();
 }
 
-void epsPlotHelper(string eps_size, string eps_path, string xrange, string fname, int iter_step){
+void epsPlotHelper(string eps_size, string eps_path, string xrange, string fname, string pic_name){
 	Gnuplot gnu;
 	gnu.cmd("set xrange " + xrange);
 	gnu.cmd("load 'viridis.pal'");
@@ -826,7 +827,7 @@ void epsPlotHelper(string eps_size, string eps_path, string xrange, string fname
 	gnu.cmd("set cbtics ('0.0' 0.0,'1.0' 1.0) offset 0,0.5 scale 0");
 	gnu.cmd("set size ratio -1"); // to have the same scale on x and y axes
 	gnu.cmd("plot '" + fname + "' every ::0::1 u 1:2:3 w l lc palette lw 2 title '"+\
-		std::to_string(iter_step)+"'");
+		pic_name+"'");
 	// gnu.cmd("set term png size " + png_size);
 	// gnu.cmd("set terminal postscript eps enhanced size "+png_size);
 	gnu.cmd("set terminal postscript eps size "+eps_size);
@@ -850,9 +851,12 @@ void epsPlotHelper(string eps_size, string eps_path, string xrange, string fname
 /// in the polymer else, they represent the damage in a polymer connection
 // -----------------------------------------------------------------------
 void Network::plotNetwork(int iter_step, bool first_time){
+	if (!EPS){
+		return;
+	}
 	ofstream f;
 	Gnuplot gnu;
-	string fname = std::string(FLDR_STRING) + "/" + "data_for_plot.txt";
+	string fname = std::string(FLDR_STRING) + "/" + "eps_data.txt";
 	float c;
 	f.open(fname,std::ofstream::out | std::ofstream::trunc);
 	// std::default_random_engine seed;
@@ -962,41 +966,149 @@ void Network::plotNetwork(int iter_step, bool first_time){
 	convert.str(std::string());
 
 	// string bs = "/";
-	if (EPS){
-		string eps_path = std::string(FLDR_STRING) + "/graphs/" + std::to_string(iter_step) + ".eps";
-		epsPlotHelper(eps_size, eps_path, xrange, fname, iter_step);
-	}
-	if (PNG){
-		string png_path = std::string(FLDR_STRING) + "/" + std::to_string(iter_step) + ".png";
-		pngPlotHelper(png_size, png_path, xrange, fname, iter_step);
-	}
-	
-
-	
-	
-	// gnu.cmd("set xrange " + xrange);
-	// gnu.cmd("load 'viridis.pal'");
-	// gnu.cmd("set key off");
-	// gnu.cmd("set colorbox default vertical");
-	// gnu.cmd("set cbrange [0:1]");
-	// gnu.cmd("set cbtics ('0.0' 0.0,'1.0' 1.0) offset 0,0.5 scale 0");
-	// gnu.cmd("set size ratio -1"); // to have the same scale on x and y axes
-	// gnu.cmd("plot '" + fname + "' every ::0::1 u 1:2:3 w l lc palette lw 2 title '"+\
-	// 	std::to_string(iter_step)+"'");
-	// // gnu.cmd("set term png size " + png_size);
-	// // gnu.cmd("set terminal postscript eps enhanced size "+png_size);
-	// gnu.cmd("set terminal postscript eps size "+eps_size);
-	// gnu.cmd("set output '"+ eps_path + "'");
-
-	// gnu.cmd("set term png size " + png_size);
-	// gnu.cmd("set output '"+ png_path + "'");
-
-	// gnu.cmd("replot");
-	// // gnu.cmd("set term x11");
-	// gnu.reset_plot();
+	// if (EPS){
+		std::stringstream ss;
+	ss << std::setw(5) << std::setfill('0') << iter_step;
+	std::string pic_name = ss.str();
+		string eps_path = std::string(FLDR_STRING) + "/graphs/" + pic_name + ".eps";
+		epsPlotHelper(eps_size, eps_path, xrange, fname, pic_name);
+	// }
+	// if (PNG){
+	// 	string png_path = std::string(FLDR_STRING) + "/" + std::to_string(iter_step) + ".png";
+	// 	pngPlotHelper(png_size, png_path, xrange, fname, iter_step);
+	// }
 	
 }
 
+void Network::plotFrames(int iter_step, bool first_time){
+	if (!PNG){
+		return;
+	}
+	ofstream f;
+	Gnuplot gnu;
+	string fname = std::string(FLDR_STRING) + "/" + "frame_data.txt";
+	float c;
+	f.open(fname,std::ofstream::out | std::ofstream::trunc);
+	// std::default_random_engine seed;
+	// std::uniform_real_distribution<float> arbitcolor(0.0,1.0);
+	int node1, node2;
+	if(first_time){
+		float r1[DIM];
+		float r2[DIM];
+		float s;
+		int j, k;
+		for (j = 0; j < n_elems; j++){
+		// read the two points that form the edge // 2 because 2 points make an edge! Duh.
+			node1 = edges[j * 2]; 
+			node2 = edges[j * 2 + 1];
+			
+			// // check if pair exists
+			// if(node1 == -1 || node2 == -1) {
+			// 	continue;
+			// }
+
+			// read the positions
+			#pragma unroll
+			for(k = 0; k<DIM; k++){
+				r1[k] = R[node1*DIM + k]; 
+				r2[k] = R[node2*DIM + k];
+			}
+			
+			// check PBC_STATUS
+			if (PBC[j]) {
+				// add PBC_vector to get new node position
+				#pragma unroll
+				for (k = 0; k < DIM; k++){
+					r2[k] += PBC_vector[k];
+				}
+				// get force on node1 due to node2
+				s = dist(r1, r2);
+			}
+			else{
+				s = dist(r1, r2);
+			}
+		
+			c = s/L[j];
+			for(int d = 0; d<DIM; d++){
+					f<<R[node1*DIM+d]<<"\t";
+				}
+				f<<c<<endl;
+			if(!PBC[j]){
+				for(int d = 0; d<DIM; d++){
+					f<<R[node2*DIM+d]<<"\t";
+				}
+			}
+			else{
+				for(int d = 0; d<DIM; d++){
+					f<<(R[node1*DIM+d]+10)<<"\t";
+				}				
+			}
+			f<<c<<endl<<endl;
+		}
+		f.close();
+	}
+	else{
+	for(int i = 0; i<n_elems; i++){
+		c = damage[i];
+		node1 = edges[2*i];
+		node2 = edges[2*i+1];
+
+		if(node1!=-1 && node2!=-1){
+			for(int d = 0; d<DIM; d++){
+					f<<R[node1*DIM+d]<<"\t";
+				}
+				f<<c<<endl;
+			if(!PBC[i]){
+				for(int d = 0; d<DIM; d++){
+					f<<R[node2*DIM+d]<<"\t";
+				}
+			}
+			else{
+				for(int d = 0; d<DIM; d++){
+					f<<(R[node1*DIM+d]+10)<<"\t";
+				}				
+			}
+		f<<c<<endl<<endl;
+		}
+	}
+	f.close();
+	}
+	//Plot to h
+	float aspect_ratio = (MAXBOUND_X)/(R[tsideNodes[0]*DIM+1]); 
+	// float aspect_ratio = 8*(MAXBOUND_X)/(R[tsideNodes[0]*DIM+1]); 
+
+	stringstream convert;
+
+	convert<<"[-5:"<<MAXBOUND_X+5<<"]";
+	string xrange = convert.str();
+	convert.str(std::string());
+	
+	int x_res = 1280;
+	convert<<x_res<<", "<<int((x_res-410)/aspect_ratio+410);
+	string png_size = convert.str();
+	convert.str(std::string());
+
+
+	int eps_x_res = 40;
+	int eps_y_res = eps_x_res/aspect_ratio;
+	convert<<eps_x_res<<", "<<eps_y_res;
+	string eps_size = convert.str();
+	convert.str(std::string());
+
+	// string bs = "/";
+	// if (EPS){
+	// 	string eps_path = std::string(FLDR_STRING) + "/graphs/" + std::to_string(iter_step) + ".eps";
+	// 	epsPlotHelper(eps_size, eps_path, xrange, fname, iter_step);
+	// }
+	// if (PNG){
+	std::stringstream ss;
+	ss << std::setw(5) << std::setfill('0') << iter_step;
+	std::string pic_name = ss.str();
+		string png_path = std::string(FLDR_STRING) + "/frames/" + pic_name + ".png";
+		pngPlotHelper(png_size, png_path, xrange, fname, pic_name);
+	// }
+	
+}
 // ----------------------------------------------------------------------- 
 /// \brief Gets the active (load-bearing) edges in the Network object. 
 /// Also prints out that info to STDOUT or piped OUT

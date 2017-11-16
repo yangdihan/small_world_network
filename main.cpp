@@ -55,6 +55,15 @@ int main(int argc, char* argv[]) {
 	Note: mpirun -np <numprocs> <executable> <filename.msh> 1 
 	*/
 	string path = argv[1];
+	// add by Dihan
+	// string temp_arg = "cd ./"+std::string(FLDR_STRING);
+	// system(temp_arg.c_str());
+	string arg1 = "mkdir ./"+std::string(FLDR_STRING)+"/graphs";
+	string arg2 = "mkdir ./"+std::string(FLDR_STRING)+"/frames";
+	system(arg1.c_str());
+	system(arg2.c_str());
+	// system("cd ../");
+
 
 	#if SACBONDS
 	#define DECL_NET sacNetwork test_network(path)
@@ -147,7 +156,7 @@ int main(int argc, char* argv[]) {
 			
 			curr_n_edges = test_network.get_current_edges();
 			test_network.get_edge_number(remain_chains, i, curr_n_edges);
-			
+			test_network.plotFrames(i, false);
 			// But add more lines, just to show-off.
 			// first several step
 			int first_few = STEPS/100;
@@ -252,7 +261,10 @@ int main(int argc, char* argv[]) {
 
 		// add by Dihan
 		write_edge_number<int>(fname2, remain_chains, STEPS);
-
+		string arg3 = "ffmpeg -f image2 -r 20 -i ./"+std::string(FLDR_STRING)+"/frames/%05d.png -vcodec mpeg4 -y ./"+std::string(FLDR_STRING)+"/movie.mp4";
+		system(arg3.c_str());
+		string arg4 = "rm ./"+std::string(FLDR_STRING)+"/frames/*.png";
+		system(arg4.c_str());
 		if (long_links){
 			write_long_link<float>(fname3, long_link_forces, long_link_node_pos, long_link_orient, STEPS);
 			free(long_link_forces);
@@ -262,6 +274,7 @@ int main(int argc, char* argv[]) {
 
 		free(plate_forces);
 		free(remain_chains);
+
 		// animation();
 
 	}

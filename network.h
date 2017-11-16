@@ -81,6 +81,8 @@ public:
 	virtual void get_edge_number(int* remain_chains, int iter, int curr_n_edges);
 
 	virtual void plotNetwork(int, bool);
+	//add by Dihan
+	virtual void plotFrames(int, bool);
 	virtual void clear();
 	void copy(Network const & source);
 	void dump(int,bool first_time = false);
