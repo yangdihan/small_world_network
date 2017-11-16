@@ -6,7 +6,6 @@
 #include "crack.h"
 #include <math.h>
 #include <random>
-#define PI 3.14159265
 using namespace std;
 
 // ----------------------------------------------------------------------- 

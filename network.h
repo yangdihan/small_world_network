@@ -69,7 +69,7 @@ public:
 	virtual void move_top_plate();
 	virtual void get_plate_forces(float*, int);
 	// add by Dihan
-	virtual void get_long_link_status(float* long_link_forces, float* long_link_node_pos, int iter);
+	virtual void get_long_link_status(float* long_link_forces, float* long_link_node_pos, float* long_link_orient, int iter);
 
 	virtual void optimize(float eta = 0.1, float alpha = 0.9, int max_iter = 800);
 	float get_weight();

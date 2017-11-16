@@ -962,12 +962,18 @@ void Network::plotNetwork(int iter_step, bool first_time){
 	convert.str(std::string());
 
 	// string bs = "/";
-	string eps_path = std::string(FLDR_STRING) + "/graphs/" + std::to_string(iter_step) + ".eps";
-	string png_path = std::string(FLDR_STRING) + "/" + std::to_string(iter_step) + ".png";
+	if (EPS){
+		string eps_path = std::string(FLDR_STRING) + "/graphs/" + std::to_string(iter_step) + ".eps";
+		epsPlotHelper(eps_size, eps_path, xrange, fname, iter_step);
+	}
+	if (PNG){
+		string png_path = std::string(FLDR_STRING) + "/" + std::to_string(iter_step) + ".png";
+		pngPlotHelper(png_size, png_path, xrange, fname, iter_step);
+	}
 	
 
-	pngPlotHelper(png_size, png_path, xrange, fname, iter_step);
-	epsPlotHelper(eps_size, eps_path, xrange, fname, iter_step);
+	
+	
 	// gnu.cmd("set xrange " + xrange);
 	// gnu.cmd("load 'viridis.pal'");
 	// gnu.cmd("set key off");
@@ -1288,13 +1294,14 @@ void Network::get_plate_forces(float* plate_forces, int iter){
 }
 
 
-void Network::get_long_link_status(float* long_link_forces, float* long_link_node_pos, int iter){
+void Network::get_long_link_status(float* long_link_forces, float* long_link_node_pos, float* long_link_orient, int iter){
 	int node1;
 	int node2;
 	int num = RANDOM_LONG+RANDOM_Y;
 	float s;
 	float Len;
 	float force;
+	float orient;
 	//might need to change when 3D:
 	// float* pos1 = new float[DIM];
 	// float* pos2 = new float[DIM];
@@ -1305,24 +1312,13 @@ void Network::get_long_link_status(float* long_link_forces, float* long_link_nod
 		Len = L[n_elems-i];
 
 		s = dist(&R[node1*DIM], &R[node2*DIM]);
-		// s = sqrt((x2-x1)*(x2-x1) + (y2-y1)*(y2-y1));
+		orient = orientation(&R[node1*DIM], &R[node2*DIM]);
 		force = force_wlc(s, Len);
+
 		long_link_node_pos[iter*num + (num-i)] = s;
 		long_link_forces[iter*num + (num-i)] = force;
+		long_link_orient[iter*num + (num-i)] = orient;
 	}
-
-		float x1 = R[node1*DIM+0];
-		float y1 = R[node1*DIM+1];
-		float x2 = R[node2*DIM+0];
-		float y2 = R[node2*DIM+1];
-		float s_test = sqrt((x2-x1)*(x2-x1) + (y2-y1)*(y2-y1));
-		// int i = 1;
-		// cout<<"Adding edge between "<<node1<<", "<<node2<<endl;
-		// cout<<"should be same as "<<edges[(n_elems-i)*2+0]<<", "<<edges[(n_elems-i)*2+1]<<endl;
-		// cout << "adding edges # is "<< (n_elems-i)*2+0 <<endl;
-		// cout << "adding edges # is "<< (n_elems-i)*2+1 <<endl;
-		// cout << "node to node distance is "<< dist(&R[node1*DIM], &R[node2*DIM]) << endl;
-		// cout << "calculate by hand "<< s_test << endl;
 }
 
 

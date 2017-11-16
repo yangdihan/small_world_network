@@ -93,15 +93,19 @@ int main(int argc, char* argv[]) {
 		bool should_stop = test_network.get_stats();
 		
 		// add by Dihan to try long links
+		bool long_links = (RANDOM_LONG+RANDOM_Y > 0);
 		float* long_link_forces;
 		float* long_link_node_pos;
-		if (RANDOM_LONG+RANDOM_Y > 0){
+		float* long_link_orient;
+		if (long_links){
 			test_network.add_long_range_egdes_random(RANDOM_LONG);
 			test_network.add_long_range_egdes_y(RANDOM_Y);
 			long_link_forces = (float*)malloc(sizeof(float)*(RANDOM_LONG+RANDOM_Y)*STEPS);
 			memset(long_link_forces, 0.0, sizeof(float)*(RANDOM_LONG+RANDOM_Y)*STEPS);
 			long_link_node_pos = (float*)malloc(sizeof(float)*(RANDOM_LONG+RANDOM_Y)*STEPS);
 			memset(long_link_node_pos, 0.0, sizeof(float)*(RANDOM_LONG+RANDOM_Y)*STEPS);
+			long_link_orient = (float*)malloc(sizeof(float)*(RANDOM_LONG+RANDOM_Y)*STEPS);
+			memset(long_link_orient, 0.0, sizeof(float)*(RANDOM_LONG+RANDOM_Y)*STEPS);
 		}
 
 		int old_n_edges = test_network.get_current_edges();
@@ -132,8 +136,8 @@ int main(int argc, char* argv[]) {
 		
 		for(int i = 1; i<STEPS; i++ ){
 			// The three lines that do all the work
-			if (RANDOM_LONG+RANDOM_Y > 0){
-				test_network.get_long_link_status(long_link_forces, long_link_node_pos, i);
+			if (long_links){
+				test_network.get_long_link_status(long_link_forces, long_link_node_pos, long_link_orient, i);
 			}
 			test_network.optimize();
 			test_network.move_top_plate();
@@ -145,8 +149,9 @@ int main(int argc, char* argv[]) {
 			test_network.get_edge_number(remain_chains, i, curr_n_edges);
 			
 			// But add more lines, just to show-off.
-			// first 100 step
-			if (i<=100){
+			// first several step
+			int first_few = STEPS/100;
+			if (i<=first_few){
 				should_stop = test_network.get_stats();
 				
 				// if(curr_n_edges<=old_n_edges){
@@ -248,10 +253,11 @@ int main(int argc, char* argv[]) {
 		// add by Dihan
 		write_edge_number<int>(fname2, remain_chains, STEPS);
 
-		if (RANDOM_LONG+RANDOM_Y > 0){
-			write_long_link<float>(fname3, long_link_forces, long_link_node_pos, STEPS);
+		if (long_links){
+			write_long_link<float>(fname3, long_link_forces, long_link_node_pos, long_link_orient, STEPS);
 			free(long_link_forces);
 			free(long_link_node_pos);
+			free(long_link_orient);
 		}
 
 		free(plate_forces);

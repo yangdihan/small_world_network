@@ -117,6 +117,14 @@ inline float dist(const float* r1, const float* r2){
 	return sqrt(s);
 }
 
+inline float orientation(const float* r1, const float* r2){//return the angle
+	float dx = r1[0] - r2[0];
+	float dy = r1[1] - r2[1];
+	float tan = dy/dx;
+	float result = atan (tan) * 180 / PI;
+	return result;
+}
+
 void forcevector(float* result, float* r1, float* r2, float L);
 
 
@@ -183,15 +191,15 @@ void write_edge_number(string& fname2, t* remain_chains, int row){
 }
 
 template <typename t>
-void write_long_link(string& fname3, t* long_link_forces, t* long_link_node_pos, int row){
+void write_long_link(string& fname3, t* long_link_forces, t* long_link_node_pos, t* long_link_orient, int row){
 	ofstream logger;
 	logger.open(fname3, ios::trunc|ios_base::out);
 	int num = RANDOM_LONG+RANDOM_Y;
 	for(int j = 0; j< row; j++){
 		for (int i=0; i<num; i++){
 			logger<< long_link_forces[j*num + i] <<"\t";
-			// logger<< long_link_forces[j*num*2 + i*2 + 1] <<"\t";
 			logger<< long_link_node_pos[j*num + i] << "\t";
+			logger<< long_link_orient[j*num + i] << "\t";
 		}
 		logger << "\n";
 	}

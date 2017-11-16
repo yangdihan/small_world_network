@@ -2,19 +2,22 @@
 #define __params__
 
 // FREQUENTLY USED
-#define MAXBOUND_X 500.0f
-#define MAXBOUND_Y 1000.0f
+#define MAXBOUND_X 50.0f
+#define MAXBOUND_Y 50.0f
 #define TIME_STEP 1e-2
 #define SIM_TIME 20
 #define L_MEAN 150.0f
 #define L_STD 25.0f
-#define FLDR_STRING "demo/demo_long_crack_fix_BC"
+#define FLDR_STRING "test1115"
 //add by Dihan
 #define SIDE_BC false
-#define ROLLER true
-#define RANDOM_LONG 0
+#define ROLLER false
+#define RANDOM_LONG 5
 #define RANDOM_Y 0
+#define EPS false
+#define PNG true
 
+#define PI 3.141592653
 #define DIM 2
 #define TOL 1e-6
 #define STEPS int(SIM_TIME/TIME_STEP)
