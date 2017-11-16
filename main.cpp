@@ -133,7 +133,7 @@ int main(int argc, char* argv[]) {
 		memset(remain_chains, 0, STEPS*sizeof(int));
 
 		test_network.plotNetwork(0, true);
-
+		test_network.plotFrames(0, true);
 		// 
 		// test_network.dump(0, true);
 
@@ -253,18 +253,23 @@ int main(int argc, char* argv[]) {
 
 		// For names allow unique identification. Well, almost! 
 		string sb = SACBONDS ? "true" : "false" ; 
-		string fname = std::string(FLDR_STRING) + "/" + std::to_string(L_STD/L_MEAN) + "_" + sb + ".txt";
-		string fname2 = std::string(FLDR_STRING) + "/" + std::to_string(L_STD/L_MEAN) + "_" + "remain_chains" + ".txt";
+		// string fname = std::string(FLDR_STRING) + "/" + std::to_string(L_STD/L_MEAN) + "_" + sb + ".txt";
+		// string fname2 = std::string(FLDR_STRING) + "/" + std::to_string(L_STD/L_MEAN) + "_" + "remain_chains" + ".txt";
+		string fname = std::string(FLDR_STRING) + "/" + "forces.txt";
+		string fname2 = std::string(FLDR_STRING) + "/" + "remain_chains.txt";
 		string fname3 = std::string(FLDR_STRING) + "/" + "add_long_link_info.txt";
 		write_to_file<float>(fname, plate_forces, STEPS, DIM);
 
-
-		// add by Dihan
 		write_edge_number<int>(fname2, remain_chains, STEPS);
-		string arg3 = "ffmpeg -f image2 -r 20 -i ./"+std::string(FLDR_STRING)+"/frames/%05d.png -vcodec mpeg4 -y ./"+std::string(FLDR_STRING)+"/movie.mp4";
-		system(arg3.c_str());
-		string arg4 = "rm ./"+std::string(FLDR_STRING)+"/frames/*.png";
-		system(arg4.c_str());
+		// add by Dihan
+		if (PNG){
+			cout << "#### rendering animation ####" << endl;
+			string arg3 = "ffmpeg -f image2 -r 20 -i ./"+std::string(FLDR_STRING)+"/frames/%05d.png -vcodec mpeg4 -y ./"+std::string(FLDR_STRING)+"/movie.mp4";
+			system(arg3.c_str());
+			string arg4 = "rm ./"+std::string(FLDR_STRING)+"/frames/*.png";
+			system(arg4.c_str());
+			cout << "#### animation saved as movie.mp4 ####" << endl;
+		}
 		if (long_links){
 			write_long_link<float>(fname3, long_link_forces, long_link_node_pos, long_link_orient, STEPS);
 			free(long_link_forces);
@@ -274,7 +279,12 @@ int main(int argc, char* argv[]) {
 
 		free(plate_forces);
 		free(remain_chains);
-
+		string arg5 = "cp plot.py ./"+std::string(FLDR_STRING)+"/";
+		system(arg5.c_str());
+		// string arg6 = "cd ./"+std::string(FLDR_STRING);
+		// system(arg6.c_str());
+		// string arg7 = "python3 plot.py";
+		// system(arg7.c_str());
 		// animation();
 
 	}

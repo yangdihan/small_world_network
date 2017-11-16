@@ -1427,7 +1427,7 @@ void Network::get_long_link_status(float* long_link_forces, float* long_link_nod
 		orient = orientation(&R[node1*DIM], &R[node2*DIM]);
 		force = force_wlc(s, Len);
 
-		long_link_node_pos[iter*num + (num-i)] = s;
+		long_link_node_pos[iter*num + (num-i)] = s/Len;
 		long_link_forces[iter*num + (num-i)] = force;
 		long_link_orient[iter*num + (num-i)] = orient;
 	}

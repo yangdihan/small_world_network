@@ -19,5 +19,5 @@ add_3_x_1		add_3_y_1		add_3_x_2		add_3_y_2
 
 
 add_long_link_info.txt:
-add_1_force		add_1_s		add_2_force		add_2_s		add_2_force		add_2_s
+add_1_force		add_1_stretch		add_1_orientation		...add i ...
 ... every iteration ...
