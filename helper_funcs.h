@@ -22,7 +22,7 @@ defined here.
 #include <string>
 #include <cstring>
 #include <stddef.h>
-#include "vel.h"
+// #include "vel.h"
 #include "params.h"
 
 using namespace std;

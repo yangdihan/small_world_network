@@ -3,17 +3,20 @@
 
 // FREQUENTLY USED
 #define MAXBOUND_X 500.0f
-#define MAXBOUND_Y 250.0f
+#define MAXBOUND_Y 800.0f
 #define TIME_STEP 1e-2
 #define SIM_TIME 20
 #define L_MEAN 150.0f
 #define L_STD 25.0f
-#define FLDR_STRING "demo16"
+#define FLDR_STRING "trials"
+#define vel_x 0.0f
+#define vel_y 50.0f
 //add by Dihan
 #define SIDE_BC false
 #define ROLLER true
 #define RANDOM_LONG 0
 #define RANDOM_Y 0
+#define PRESTRETCH false
 #define EPS false
 #define PNG true
 

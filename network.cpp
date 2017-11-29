@@ -328,7 +328,11 @@ void Network::add_long_range_egdes_y(int n_add){
 
 		// update the contour lengths according to position
 		// L[n_elems] = s/prestretch;
-		L[n_elems] = s/this->meanXL;
+		if (PRESTRETCH){
+			L[n_elems] = meanX/meanXL;
+		}else{
+			L[n_elems] = s/this->meanXL;
+		}
 
 		cout << "the node distance of this long link is " << endl;
 		cout << s << endl;
@@ -408,12 +412,16 @@ void Network::add_long_range_egdes_random(int n_add){
 		float y1 = R[node1*DIM+1];
 		float x2 = R[node2*DIM+0];
 		float y2 = R[node2*DIM+1];
-		float s_test = sqrt((x2-x1)*(x2-x1) + (y2-y1)*(y2-y1));
+		// float s_test = sqrt((x2-x1)*(x2-x1) + (y2-y1)*(y2-y1));
 
 
 
 		// update the contour lengths according to position
-		L[n_elems] = s/this->meanXL;
+		if (PRESTRETCH){
+			L[n_elems] = meanX/meanXL;
+		}else{
+			L[n_elems] = s/this->meanXL;
+		}
 		cout << "the node distance of this long link is " << endl;
 		cout << s << endl;
 		cout << "add this L is " << endl;

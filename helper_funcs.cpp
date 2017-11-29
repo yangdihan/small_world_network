@@ -26,7 +26,7 @@ descriptions without parameter descriptions is attached.
 
 using namespace std;
 
-#include "vel.h"
+// #include "vel.h"
 #include "helper_funcs.h"
 #include "params.h"
 
