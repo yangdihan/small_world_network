@@ -396,7 +396,7 @@ void Network::add_long_range_egdes_random(int n_add){
 	srand(time(NULL));
 	for(int i = 0; i < n_add; i++){
 		// while(s<L_MEAN/4 || s>L_MEAN){ 
-		while(s<2*this->meanX){ 
+		while(s<20*this->meanX){ 
 			node1 = rand()%(n_nodes - 4) + 4;
 			node2 = rand()%(n_nodes - 4) + 4;
 		
@@ -1110,7 +1110,7 @@ void Network::plotFrames(int iter_step, bool first_time){
 	// }
 	// if (PNG){
 	std::stringstream ss;
-	ss << std::setw(5) << std::setfill('0') << iter_step;
+	ss << std::setw(5) << std::setfill('0') << int(iter_step/FRAME);
 	std::string pic_name = ss.str();
 		string png_path = std::string(FLDR_STRING) + "/frames/" + pic_name + ".png";
 		pngPlotHelper(png_size, png_path, xrange, fname, pic_name);

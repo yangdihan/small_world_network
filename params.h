@@ -14,11 +14,12 @@
 //add by Dihan
 #define SIDE_BC false
 #define ROLLER true
-#define RANDOM_LONG 0
+#define RANDOM_LONG 20
 #define RANDOM_Y 0
 #define PRESTRETCH false
 #define EPS false
 #define PNG true
+#define FRAME 2
 
 #define PI 3.141592653
 #define DIM 2

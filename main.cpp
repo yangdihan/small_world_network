@@ -150,104 +150,107 @@ int main(int argc, char* argv[]) {
 			}
 			test_network.optimize();
 			test_network.move_top_plate();
-
 			test_network.get_plate_forces(plate_forces, i);
+			should_stop = test_network.get_stats();
 			// add by Dihan
-			
 			curr_n_edges = test_network.get_current_edges();
 			test_network.get_edge_number(remain_chains, i, curr_n_edges);
-			test_network.plotFrames(i, false);
+			
+			if (i%int(FRAME) == 0){
+				test_network.plotFrames(i, false);
+			}
+			test_network.plotNetwork(i, false);
 			// But add more lines, just to show-off.
 			// first several step
-			int first_few = STEPS/100;
-			if (i<=first_few){
-				should_stop = test_network.get_stats();
-				
-				// if(curr_n_edges<=old_n_edges){
-				// 	test_network.plotNetwork(i, false);
-				// 	test_network.dump(i);
-				// }
-				test_network.plotNetwork(i, false);
-				// test_network.dump(i);
-				if(should_stop){
-					break;
-				}
-
-				new_time_per_iter = float(clock()-t)/CLOCKS_PER_SEC;
-				if(i==0){
-					old_time_per_iter = new_time_per_iter;
-				}
-
-				if(new_time_per_iter < 0.1*old_time_per_iter){
-					cout<<"Seems like very few edges remain! \n";
-					break;
-				}
-				
-				// cout<<"Step "<<(i+1)<<" took "<<float(clock()-t)/CLOCKS_PER_SEC<<" s\n";
-				t = clock();
-				continue;
+			// int first_few = STEPS/100;
+			// if (i<=first_few){
+			
+			
+			// if(curr_n_edges<=old_n_edges){
+			// 	test_network.plotNetwork(i, false);
+			// 	test_network.dump(i);
+			// }
+			
+			// test_network.dump(i);
+			if(should_stop){
+				break;
 			}
 
-			if((i+1)%100 == 0){
-				should_stop = test_network.get_stats();
-				// curr_n_edges = test_network.get_current_edges();
-				
-				// if(curr_n_edges<=old_n_edges){
-				// 	test_network.plotNetwork(i, false);
-				// 	test_network.dump(i);
-				// }
-				test_network.plotNetwork(i, false);
-				// test_network.dump(i);
-				if(should_stop){
-					break;
-				}
-
-
-				new_time_per_iter = float(clock()-t)/CLOCKS_PER_SEC;
-				if(i==0){
-					old_time_per_iter = new_time_per_iter;
-				}
-
-				if(new_time_per_iter < 0.1*old_time_per_iter){
-					cout<<"Seems like very few edges remain! \n";
-					break;
-				}
-				
-				cout<<"Step "<<(i+1)<<" took "<<float(clock()-t)/CLOCKS_PER_SEC<<" s\n";
-				t = clock();  // reset clock
-				continue;
+			new_time_per_iter = float(clock()-t)/CLOCKS_PER_SEC;
+			if(i==0){
+				old_time_per_iter = new_time_per_iter;
 			}
 
-
-			// breaking bond steps more details
-			if(curr_n_edges < broke_thres && curr_n_edges > 0) {
-				should_stop = test_network.get_stats();
-				// curr_n_edges = test_network.get_current_edges();
-				
-				// if(curr_n_edges<=old_n_edges){
-				// 	test_network.plotNetwork(i, false);
-				// 	test_network.dump(i);
-				// }
-				test_network.plotNetwork(i, false);
-				// test_network.dump(i);
-				if(should_stop){
-					break;
-				}
-
-				new_time_per_iter = float(clock()-t)/CLOCKS_PER_SEC;
-				if(i==0){
-					old_time_per_iter = new_time_per_iter;
-				}
-
-				if(new_time_per_iter < 0.1*old_time_per_iter){
-					cout<<"Seems like very few edges remain! \n";
-					break;
-				}
-				
-				// cout<<"Step "<<(i+1)<<" took "<<float(clock()-t)/CLOCKS_PER_SEC<<" s\n";
-				t = clock();
-				continue;
+			if(new_time_per_iter < 0.1*old_time_per_iter){
+				cout<<"Seems like very few edges remain! \n";
+				break;
 			}
+			
+			// cout<<"Step "<<(i+1)<<" took "<<float(clock()-t)/CLOCKS_PER_SEC<<" s\n";
+			t = clock();
+				// continue;
+			// }
+
+			// if((i+1)%100 == 0){
+			// 	should_stop = test_network.get_stats();
+			// 	// curr_n_edges = test_network.get_current_edges();
+				
+			// 	// if(curr_n_edges<=old_n_edges){
+			// 	// 	test_network.plotNetwork(i, false);
+			// 	// 	test_network.dump(i);
+			// 	// }
+			// 	test_network.plotNetwork(i, false);
+			// 	// test_network.dump(i);
+			// 	if(should_stop){
+			// 		break;
+			// 	}
+
+
+			// 	new_time_per_iter = float(clock()-t)/CLOCKS_PER_SEC;
+			// 	if(i==0){
+			// 		old_time_per_iter = new_time_per_iter;
+			// 	}
+
+			// 	if(new_time_per_iter < 0.1*old_time_per_iter){
+			// 		cout<<"Seems like very few edges remain! \n";
+			// 		break;
+			// 	}
+				
+			// 	cout<<"Step "<<(i+1)<<" took "<<float(clock()-t)/CLOCKS_PER_SEC<<" s\n";
+			// 	t = clock();  // reset clock
+			// 	continue;
+			// }
+
+
+			// // breaking bond steps more details
+			// if(curr_n_edges < broke_thres && curr_n_edges > 0) {
+			// 	should_stop = test_network.get_stats();
+			// 	// curr_n_edges = test_network.get_current_edges();
+				
+			// 	// if(curr_n_edges<=old_n_edges){
+			// 	// 	test_network.plotNetwork(i, false);
+			// 	// 	test_network.dump(i);
+			// 	// }
+			// 	test_network.plotNetwork(i, false);
+			// 	// test_network.dump(i);
+			// 	if(should_stop){
+			// 		break;
+			// 	}
+
+			// 	new_time_per_iter = float(clock()-t)/CLOCKS_PER_SEC;
+			// 	if(i==0){
+			// 		old_time_per_iter = new_time_per_iter;
+			// 	}
+
+			// 	if(new_time_per_iter < 0.1*old_time_per_iter){
+			// 		cout<<"Seems like very few edges remain! \n";
+			// 		break;
+			// 	}
+				
+			// 	// cout<<"Step "<<(i+1)<<" took "<<float(clock()-t)/CLOCKS_PER_SEC<<" s\n";
+			// 	t = clock();
+			// 	continue;
+			// }
 
 		}
 
@@ -264,7 +267,7 @@ int main(int argc, char* argv[]) {
 		// add by Dihan
 		if (PNG){
 			cout << "#### rendering animation ####" << endl;
-			string arg3 = "ffmpeg -f image2 -r 20 -i ./"+std::string(FLDR_STRING)+"/frames/%05d.png -vcodec mpeg4 -y ./"+std::string(FLDR_STRING)+"/movie.mp4";
+			string arg3 = "ffmpeg -f image2 -r "+std::to_string(int(20/FRAME))+" -i ./"+std::string(FLDR_STRING)+"/frames/%05d.png -vcodec mpeg4 -y ./"+std::string(FLDR_STRING)+"/movie.mp4";
 			system(arg3.c_str());
 			string arg4 = "rm ./"+std::string(FLDR_STRING)+"/frames/*.png";
 			system(arg4.c_str());
