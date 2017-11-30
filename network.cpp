@@ -248,92 +248,171 @@ void Network::remove_duplicates(int& n_elems){
 ///
 // -----------------------------------------------------------------------
 // void Network::add_long_range_egdes_y(int n_add, float prestretch){
+
+// void Network::add_long_range_egdes_y(int n_add){
+// 	if (n_add == 0){
+// 		return;
+// 	}
+// 	// Add structured edges in y direction. To do so, first create 2*n_add circles
+// 	// then find a node in the circle radius (chosen here to be L_STD) and add an edge
+// 	// between these two nodes
+// 	float* centers = new float[n_add*2*2]; // 2 times n_add circles, each taking 
+// 										   // two floats to store centers
+	
+// 	cout<<"Asked to add "<<n_add<<" more edges!\n";
+
+// 	if(n_add >= n_elems/2){
+// 		cout<<"You're asking for too many long range bonds,"
+// 				" can't do it! I will add none and continue..."<<endl;
+// 	}
+	
+// 	// if(prestretch < 0.01 || prestretch > 0.99){
+// 	// 	cout<< "Value for prestretch needs to be between 0.01 and 0.99\n";
+// 	// 	prestretch = 0.25;
+// 	// }
+
+// 	// fill the centers
+// 	for(int i = 0 ; i <n_add*2 ; i++){
+// 		if(i<n_add){
+// 			centers[2*i] = MAXBOUND_X/2/n_add * (2*i+1);
+// 			centers[2*i + 1] = MAXBOUND_Y/4;
+// 		}
+// 		if(i>=n_add){
+// 			centers[2*i] = MAXBOUND_X/2/n_add * (2*(i - n_add)+1);
+// 			centers[2*i + 1] = 3*MAXBOUND_Y/4;	
+// 		}
+// 		cout<<centers[2*i]<<"\t"<<centers[2*i+1]<<endl;
+// 	}
+
+
+// 	// create circles for these centers
+// 	Crack* circles = new Crack[2*n_add]();
+// 	for(int i=0; i<2*n_add; i++){
+// 		circles[i].setter(centers[2*i], centers[2*i+1], MAXBOUND_Y/10, MAXBOUND_Y/10, 1, 0);
+// 	}
+
+// 	// fill one id per circle
+// 	int* node_per_circle = new int[2*n_add](); // value initialises to zero: ISO C++03 5.3.4[expr.new]/15
+// 	for(int i = 0; i < 2*n_add; i++){
+// 		node_per_circle[i] = 0;
+// 	}
+	
+
+// 	for(int i = 4; i<n_nodes; i++){
+// 		for(int k =0; k<2*n_add; k++){
+// 			if(node_per_circle[k] != 0){
+// 				continue;
+// 			}
+// 			if(circles[k].inside(&R[DIM*i])<=0){
+// 				node_per_circle[k] = i;
+// 			}
+// 		}
+// 	}
+
+// 	float s; // will store distances
+// 	//Add edges between selected nodes
+// 	string fname = std::string(FLDR_STRING) + "/add_link_tracker_y.txt";
+// 	ofstream logger;
+// 	logger.open(fname, ios::trunc|ios_base::out);
+// 	logger<< this->meanX <<"\t";
+// 	logger<< (this->meanX/this->meanXL);
+// 	logger<<"\n";
+// 	srand(time(NULL));
+
+// 	for(int i = 0; i < n_add; i++){
+	
+// 		edges[2*n_elems] = node_per_circle[i];
+// 		edges[2*n_elems + 1] = node_per_circle[i + n_add];
+
+// 		// Calculate distance
+// 		s = dist(&R[node_per_circle[i]*DIM], &R[node_per_circle[i + n_add]*DIM]);
+
+// 		// update the contour lengths according to position
+// 		// L[n_elems] = s/prestretch;
+// 		if (PRESTRETCH){
+// 			L[n_elems] = meanX/meanXL;
+// 		}else{
+// 			L[n_elems] = s/this->meanXL;
+// 		}
+
+// 		cout << "the node distance of this long link is " << endl;
+// 		cout << s << endl;
+// 		cout << "add this L is " << endl;
+// 		cout << L[n_elems] << endl;
+// 		// update PBC;
+
+// 		//dihan add this :
+// 		logger<< R[node_per_circle[i]*DIM + 0] <<"\t";
+// 		logger<< R[node_per_circle[i]*DIM + 1] <<"\t";
+// 		logger<< R[(node_per_circle[i + n_add])*DIM + 0] <<"\t";
+// 		logger<< R[(node_per_circle[i + n_add])*DIM + 1] <<"\t";
+// 		logger<< s <<"\t";
+// 		logger<< L[n_elems];
+// 		logger<<"\n";
+
+// 		// update PBC;
+// 		PBC[n_elems] =  false;
+
+// 		// update damage
+// 		damage[n_elems] = 0;
+
+// 		// increment n_elems
+// 		n_elems++;
+// 	}
+// 	logger.close();
+// 	cout<<"Stored long link info in "<<fname<<"!\n";
+// 	delete[] centers;
+// 	centers = NULL;
+// 	delete[] node_per_circle;
+// 	node_per_circle = NULL;
+// 	delete[] circles;
+// 	circles = NULL;
+// }
+
 void Network::add_long_range_egdes_y(int n_add){
 	if (n_add == 0){
 		return;
 	}
-	// Add structured edges in y direction. To do so, first create 2*n_add circles
-	// then find a node in the circle radius (chosen here to be L_STD) and add an edge
-	// between these two nodes
-	float* centers = new float[n_add*2*2]; // 2 times n_add circles, each taking 
-										   // two floats to store centers
-	
 	cout<<"Asked to add "<<n_add<<" more edges!\n";
-
+	int node1, node2;
+	float s = 0;
+	float x_diff = MAXBOUND_X/2;
 	if(n_add >= n_elems/2){
 		cout<<"You're asking for too many long range bonds,"
 				" can't do it! I will add none and continue..."<<endl;
 	}
-	
-	// if(prestretch < 0.01 || prestretch > 0.99){
-	// 	cout<< "Value for prestretch needs to be between 0.01 and 0.99\n";
-	// 	prestretch = 0.25;
-	// }
-
-	// fill the centers
-	for(int i = 0 ; i <n_add*2 ; i++){
-		if(i<n_add){
-			centers[2*i] = MAXBOUND_X/2/n_add * (2*i+1);
-			centers[2*i + 1] = MAXBOUND_Y/4;
-		}
-		if(i>=n_add){
-			centers[2*i] = MAXBOUND_X/2/n_add * (2*(i - n_add)+1);
-			centers[2*i + 1] = 3*MAXBOUND_Y/4;	
-		}
-		cout<<centers[2*i]<<"\t"<<centers[2*i+1]<<endl;
-	}
-
-
-	// create circles for these centers
-	Crack* circles = new Crack[2*n_add]();
-	for(int i=0; i<2*n_add; i++){
-		circles[i].setter(centers[2*i], centers[2*i+1], MAXBOUND_Y/10, MAXBOUND_Y/10, 1, 0);
-	}
-
-	// fill one id per circle
-	int* node_per_circle = new int[2*n_add](); // value initialises to zero: ISO C++03 5.3.4[expr.new]/15
-	for(int i = 0; i < 2*n_add; i++){
-		node_per_circle[i] = 0;
-	}
-	
-
-	for(int i = 4; i<n_nodes; i++){
-		for(int k =0; k<2*n_add; k++){
-			if(node_per_circle[k] != 0){
-				continue;
-			}
-			if(circles[k].inside(&R[DIM*i])<=0){
-				node_per_circle[k] = i;
-			}
-		}
-	}
-
-	float s; // will store distances
-	//Add edges between selected nodes
-	string fname = std::string(FLDR_STRING) + "/add_link_tracker_y.txt";
+	string fname = std::string(FLDR_STRING) + "/add_link_tracker.txt";
 	ofstream logger;
 	logger.open(fname, ios::trunc|ios_base::out);
 	logger<< this->meanX <<"\t";
 	logger<< (this->meanX/this->meanXL);
 	logger<<"\n";
 	srand(time(NULL));
-
 	for(int i = 0; i < n_add; i++){
-	
-		edges[2*n_elems] = node_per_circle[i];
-		edges[2*n_elems + 1] = node_per_circle[i + n_add];
+		// while(s<L_MEAN/4 || s>L_MEAN){ 
+		while(s<20*this->meanX || x_diff>3*meanX){ 
+			node1 = rand()%(n_nodes - 4) + 4;
+			node2 = rand()%(n_nodes - 4) + 4;
+		
+			s = dist(&R[node1*DIM], &R[node2*DIM]);
+			x_diff = abs(R[node1*DIM]-R[node2*DIM]);
+		}
 
-		// Calculate distance
-		s = dist(&R[node_per_circle[i]*DIM], &R[node_per_circle[i + n_add]*DIM]);
+		// add nodes to edges array
+		edges[n_elems*2] = node1;
+		edges[n_elems*2 + 1] = node2;
 
-		// update the contour lengths according to position
-		// L[n_elems] = s/prestretch;
+
+		float x1 = R[node1*DIM+0];
+		float y1 = R[node1*DIM+1];
+		float x2 = R[node2*DIM+0];
+		float y2 = R[node2*DIM+1];
+
 		if (PRESTRETCH){
 			L[n_elems] = meanX/meanXL;
 		}else{
 			L[n_elems] = s/this->meanXL;
 		}
-
 		cout << "the node distance of this long link is " << endl;
 		cout << s << endl;
 		cout << "add this L is " << endl;
@@ -341,34 +420,24 @@ void Network::add_long_range_egdes_y(int n_add){
 		// update PBC;
 
 		//dihan add this :
-		logger<< R[node_per_circle[i]*DIM + 0] <<"\t";
-		logger<< R[node_per_circle[i]*DIM + 1] <<"\t";
-		logger<< R[(node_per_circle[i + n_add])*DIM + 0] <<"\t";
-		logger<< R[(node_per_circle[i + n_add])*DIM + 1] <<"\t";
+		logger<< R[node1*DIM + 0] <<"\t";
+		logger<< R[node1*DIM + 1] <<"\t";
+		logger<< R[node2*DIM + 0] <<"\t";
+		logger<< R[node2*DIM + 1] <<"\t";
 		logger<< s <<"\t";
 		logger<< L[n_elems];
 		logger<<"\n";
-
-		// update PBC;
 		PBC[n_elems] =  false;
-
-		// update damage
 		damage[n_elems] = 0;
-
-		// increment n_elems
 		n_elems++;
+
+		s = 0;
 	}
-	logger.close();
+
+    logger.close();
 	cout<<"Stored long link info in "<<fname<<"!\n";
-	delete[] centers;
-	centers = NULL;
-	delete[] node_per_circle;
-	node_per_circle = NULL;
-	delete[] circles;
-	circles = NULL;
+
 }
-
-
 // ----------------------------------------------------------------------- 
 /// \brief Adds random long range edges to the network. Chooses two nodes
 /// uniformly at random and adds an edge with x/L = 0.25 (i.e. prestressed)
@@ -1461,7 +1530,7 @@ void Network::dump(int iter, bool first_time){
 			fname = fname + "_" + std::to_string(c);
 		}
 	}
-	fname = std::string(FLDR_STRING) + "/" + fname+".txt";
+	fname = std::string(FLDR_STRING) + "/" + fname+"_dump.txt";
 	logger.open(fname, ios_base::app);
 
 	if(first_time){

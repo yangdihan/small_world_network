@@ -170,8 +170,8 @@ int main(int argc, char* argv[]) {
 			// 	test_network.plotNetwork(i, false);
 			// 	test_network.dump(i);
 			// }
-			
 			// test_network.dump(i);
+			
 			if(should_stop){
 				break;
 			}
@@ -181,10 +181,10 @@ int main(int argc, char* argv[]) {
 				old_time_per_iter = new_time_per_iter;
 			}
 
-			if(new_time_per_iter < 0.1*old_time_per_iter){
-				cout<<"Seems like very few edges remain! \n";
-				break;
-			}
+			// if(new_time_per_iter < 0.1*old_time_per_iter){
+			// 	cout<<"Seems like very few edges remain! \n";
+			// 	break;
+			// }
 			
 			// cout<<"Step "<<(i+1)<<" took "<<float(clock()-t)/CLOCKS_PER_SEC<<" s\n";
 			t = clock();

@@ -27,6 +27,7 @@ deltaY = TIME_STEP*vel
 L = L_origin
 i = 0
 maxF = 0
+minF = 99999
 maxI = 0
 for line in open(fdir, 'r'):
 	if (i>13):
@@ -41,9 +42,11 @@ for line in open(fdir, 'r'):
 			if (-sigma > maxF and i >= 100):
 				maxF = -sigma
 				maxI = i-13
+			if (-sigma < minF and i <= 100):
+				minF = -sigma
 	i += 1
 
-F_initial = stress[0]
+F_initial = minF
 stretch_u = round(stretch1[-1],2)
 stretch_max_f = round(stretch1[stress.index(maxF)],2)
 
