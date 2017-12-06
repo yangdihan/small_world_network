@@ -143,26 +143,52 @@ int main(int argc, char* argv[]) {
 		float new_time_per_iter = 100.0f;
 		cout<<"\n Will run for "<<STEPS<<":\n";
 		
+
+		// get the initial top plate force (not equilibrium)
+		bool should_move = false;
+		int first_few = STEPS/100;
+		double plate_force_new;
+		double plate_force_min;
+
+
 		for(int i = 1; i<STEPS; i++ ){
-			// The three lines that do all the work
-			if (long_links){
+			cout << "progress: "<< 100*i/STEPS<< " %" <<endl;
+			// The "optimize-move_top_plate-get_plate_forces" do all the work
+			test_network.optimize();
+
+			// collect stats
+			test_network.get_plate_forces(plate_forces, i);
+
+			// if force start to increase, we should move top plate
+
+			plate_force_new = -plate_forces[DIM*i + 1];
+			// cout << "now the force is: "<< plate_force_new << endl;
+			if (i == 1 || plate_force_new < plate_force_min){
+				plate_force_min = plate_force_new;
+			}else{
+				should_move = true;
+			}
+
+
+			if (should_move){// see if network is self-equilibrium
+				// cout << "moving plate!!" << endl;
+				test_network.move_top_plate();
+			}
+
+			if (long_links){// record long link status
 				test_network.get_long_link_status(long_link_forces, long_link_node_pos, long_link_orient, i);
 			}
-			test_network.optimize();
-			test_network.move_top_plate();
-			test_network.get_plate_forces(plate_forces, i);
 			should_stop = test_network.get_stats();
 			// add by Dihan
 			curr_n_edges = test_network.get_current_edges();
 			test_network.get_edge_number(remain_chains, i, curr_n_edges);
-			
 			if (i%int(FRAME) == 0){
 				test_network.plotFrames(i, false);
 			}
 			test_network.plotNetwork(i, false);
 			// But add more lines, just to show-off.
 			// first several step
-			// int first_few = STEPS/100;
+			
 			// if (i<=first_few){
 			
 			

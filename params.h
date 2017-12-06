@@ -8,7 +8,7 @@
 #define SIM_TIME 20
 #define L_MEAN 150.0f
 #define L_STD 25.0f
-#define FLDR_STRING "trials"
+#define FLDR_STRING "playground"
 #define vel_x 0.0f
 #define vel_y 50.0f
 //add by Dihan
@@ -16,7 +16,7 @@
 #define ROLLER true
 #define RANDOM_LONG 20
 #define RANDOM_Y 0
-#define PRESTRETCH false
+#define PRESTRETCH 0.99
 #define EPS false
 #define PNG true
 #define FRAME 2

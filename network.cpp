@@ -247,127 +247,6 @@ void Network::remove_duplicates(int& n_elems){
 /// If value is not between (0.01,0.99), 0.25 is assumed 
 ///
 // -----------------------------------------------------------------------
-// void Network::add_long_range_egdes_y(int n_add, float prestretch){
-
-// void Network::add_long_range_egdes_y(int n_add){
-// 	if (n_add == 0){
-// 		return;
-// 	}
-// 	// Add structured edges in y direction. To do so, first create 2*n_add circles
-// 	// then find a node in the circle radius (chosen here to be L_STD) and add an edge
-// 	// between these two nodes
-// 	float* centers = new float[n_add*2*2]; // 2 times n_add circles, each taking 
-// 										   // two floats to store centers
-	
-// 	cout<<"Asked to add "<<n_add<<" more edges!\n";
-
-// 	if(n_add >= n_elems/2){
-// 		cout<<"You're asking for too many long range bonds,"
-// 				" can't do it! I will add none and continue..."<<endl;
-// 	}
-	
-// 	// if(prestretch < 0.01 || prestretch > 0.99){
-// 	// 	cout<< "Value for prestretch needs to be between 0.01 and 0.99\n";
-// 	// 	prestretch = 0.25;
-// 	// }
-
-// 	// fill the centers
-// 	for(int i = 0 ; i <n_add*2 ; i++){
-// 		if(i<n_add){
-// 			centers[2*i] = MAXBOUND_X/2/n_add * (2*i+1);
-// 			centers[2*i + 1] = MAXBOUND_Y/4;
-// 		}
-// 		if(i>=n_add){
-// 			centers[2*i] = MAXBOUND_X/2/n_add * (2*(i - n_add)+1);
-// 			centers[2*i + 1] = 3*MAXBOUND_Y/4;	
-// 		}
-// 		cout<<centers[2*i]<<"\t"<<centers[2*i+1]<<endl;
-// 	}
-
-
-// 	// create circles for these centers
-// 	Crack* circles = new Crack[2*n_add]();
-// 	for(int i=0; i<2*n_add; i++){
-// 		circles[i].setter(centers[2*i], centers[2*i+1], MAXBOUND_Y/10, MAXBOUND_Y/10, 1, 0);
-// 	}
-
-// 	// fill one id per circle
-// 	int* node_per_circle = new int[2*n_add](); // value initialises to zero: ISO C++03 5.3.4[expr.new]/15
-// 	for(int i = 0; i < 2*n_add; i++){
-// 		node_per_circle[i] = 0;
-// 	}
-	
-
-// 	for(int i = 4; i<n_nodes; i++){
-// 		for(int k =0; k<2*n_add; k++){
-// 			if(node_per_circle[k] != 0){
-// 				continue;
-// 			}
-// 			if(circles[k].inside(&R[DIM*i])<=0){
-// 				node_per_circle[k] = i;
-// 			}
-// 		}
-// 	}
-
-// 	float s; // will store distances
-// 	//Add edges between selected nodes
-// 	string fname = std::string(FLDR_STRING) + "/add_link_tracker_y.txt";
-// 	ofstream logger;
-// 	logger.open(fname, ios::trunc|ios_base::out);
-// 	logger<< this->meanX <<"\t";
-// 	logger<< (this->meanX/this->meanXL);
-// 	logger<<"\n";
-// 	srand(time(NULL));
-
-// 	for(int i = 0; i < n_add; i++){
-	
-// 		edges[2*n_elems] = node_per_circle[i];
-// 		edges[2*n_elems + 1] = node_per_circle[i + n_add];
-
-// 		// Calculate distance
-// 		s = dist(&R[node_per_circle[i]*DIM], &R[node_per_circle[i + n_add]*DIM]);
-
-// 		// update the contour lengths according to position
-// 		// L[n_elems] = s/prestretch;
-// 		if (PRESTRETCH){
-// 			L[n_elems] = meanX/meanXL;
-// 		}else{
-// 			L[n_elems] = s/this->meanXL;
-// 		}
-
-// 		cout << "the node distance of this long link is " << endl;
-// 		cout << s << endl;
-// 		cout << "add this L is " << endl;
-// 		cout << L[n_elems] << endl;
-// 		// update PBC;
-
-// 		//dihan add this :
-// 		logger<< R[node_per_circle[i]*DIM + 0] <<"\t";
-// 		logger<< R[node_per_circle[i]*DIM + 1] <<"\t";
-// 		logger<< R[(node_per_circle[i + n_add])*DIM + 0] <<"\t";
-// 		logger<< R[(node_per_circle[i + n_add])*DIM + 1] <<"\t";
-// 		logger<< s <<"\t";
-// 		logger<< L[n_elems];
-// 		logger<<"\n";
-
-// 		// update PBC;
-// 		PBC[n_elems] =  false;
-
-// 		// update damage
-// 		damage[n_elems] = 0;
-
-// 		// increment n_elems
-// 		n_elems++;
-// 	}
-// 	logger.close();
-// 	cout<<"Stored long link info in "<<fname<<"!\n";
-// 	delete[] centers;
-// 	centers = NULL;
-// 	delete[] node_per_circle;
-// 	node_per_circle = NULL;
-// 	delete[] circles;
-// 	circles = NULL;
-// }
 
 void Network::add_long_range_egdes_y(int n_add){
 	if (n_add == 0){
@@ -408,15 +287,17 @@ void Network::add_long_range_egdes_y(int n_add){
 		float x2 = R[node2*DIM+0];
 		float y2 = R[node2*DIM+1];
 
-		if (PRESTRETCH){
-			L[n_elems] = meanX/meanXL;
-		}else{
-			L[n_elems] = s/this->meanXL;
-		}
-		cout << "the node distance of this long link is " << endl;
-		cout << s << endl;
-		cout << "add this L is " << endl;
-		cout << L[n_elems] << endl;
+		// if (PRESTRETCH){
+		// 	L[n_elems] = meanX/meanXL;
+		// }else{
+		// 	L[n_elems] = s/meanXL;
+		// }
+		L[n_elems] = ((1-PRESTRETCH)*s + PRESTRETCH*meanX)/meanXL;
+		cout << "prestretch of addition links are "<< s/L[n_elems] << endl;
+		// cout << "the node distance of this long link is " << endl;
+		// cout << s << endl;
+		// cout << "add this L is " << endl;
+		// cout << L[n_elems] << endl;
 		// update PBC;
 
 		//dihan add this :
@@ -486,15 +367,17 @@ void Network::add_long_range_egdes_random(int n_add){
 
 
 		// update the contour lengths according to position
-		if (PRESTRETCH){
-			L[n_elems] = meanX/meanXL;
-		}else{
-			L[n_elems] = s/this->meanXL;
-		}
-		cout << "the node distance of this long link is " << endl;
-		cout << s << endl;
-		cout << "add this L is " << endl;
-		cout << L[n_elems] << endl;
+		// if (PRESTRETCH){
+		// 	L[n_elems] = meanX/meanXL;
+		// }else{
+		// 	L[n_elems] = s/this->meanXL;
+		// }
+		L[n_elems] = ((1-PRESTRETCH)*s + PRESTRETCH*meanX)/meanXL;
+		cout << "prestretch of addition links are "<< s/L[n_elems] << endl;
+		// cout << "the node distance of this long link is " << endl;
+		// cout << s << endl;
+		// cout << "add this L is " << endl;
+		// cout << L[n_elems] << endl;
 		// update PBC;
 
 		//dihan add this :
@@ -877,6 +760,7 @@ void Network::apply_crack(Cracklist & alist) {
 
 void pngPlotHelper(string png_size, string png_path, string xrange, string fname, string pic_name){
 	Gnuplot gnu;
+	gnu.cmd(setenv('GNUTERM','qt'));
 	gnu.cmd("set xrange " + xrange);
 	gnu.cmd("load 'viridis.pal'");
 	gnu.cmd("set key off");
@@ -1301,14 +1185,14 @@ bool Network::get_stats(){
 	mean_t /= c;
 	var_t /= c;
 	var_t -= mean_t*mean_t;
-	cout<<"Number of edges: "<<c<<endl;
+	// cout<<"Number of edges: "<<c<<endl;
 	// cout<<"Number of edges with x>0.99L: "<<short_L<<endl;
-	cout<<"node-node distance mean: "<<mean_x<<endl;
+	// cout<<"node-node distance mean: "<<mean_x<<endl;
 	this->meanX = mean_x;
 	// cout<<"node-node distance std_dev: "<<sqrt(var_x)<<endl;
 	// cout<<"node-node distance max: "<<max_x<<endl;
 	cout<<"\n";
-	cout<<"node-node x/L mean: "<<mean_t<<endl;
+	// cout<<"node-node x/L mean: "<<mean_t<<endl;
 	this->meanXL = mean_t;
 	// cout<<"node-node x/L std_dev: "<<sqrt(var_t)<<endl;	
 	// cout<<"node-node x/L max: "<<max_t<<endl;
@@ -1372,46 +1256,34 @@ void Network::move_top_plate(){
 			R[node*DIM + d] += TIME_STEP*vel[d]; 
 		}
 	}
-	// add by dihan for side roller:
-	// if (ROLLER){
+	// if (SIDE_BC){
+	// 	int top_first_node = tsideNodes[0];
+	// 	float cur_height = R[top_first_node*2+1];
+	// 	float total_disp = TIME_STEP*vel[1];
+	// 	float perc_disp = total_disp/cur_height;
 	// 	for(int i = 0; i<n_lside; i++){
 	// 		node = lsideNodes[i];
-	// 		R[node*2] = 0;
+	// 		// #pragma unroll
+	// 		if (R[node*2 + 1] == cur_height){
+	// 			R[node*2 + 1] += 0;
+	// 			// cout << "left: already top node" << endl;
+	// 		}else{
+	// 			R[node*2 + 1] += R[node*2 + 1]*perc_disp; 
+	// 			// cout << "left: add percentage" << endl;
+	// 		}	
 	// 	}
 	// 	for(int i = 0; i<n_rside; i++){
 	// 		node = rsideNodes[i];
-	// 		R[node*2] = MAXBOUND_Y;
+	// 		// #pragma unroll
+	// 		if (R[node*2 + 1] == cur_height){
+	// 			R[node*2 + 1] += 0;
+	// 			// cout << "right: already top node" << endl;
+	// 		}else{
+	// 			R[node*2 + 1] += R[node*2 + 1]*perc_disp;
+	// 			// cout << "right: add percentage" << endl;
+	// 		} 	
 	// 	}
 	// }
-
-	if (SIDE_BC){
-		int top_first_node = tsideNodes[0];
-		float cur_height = R[top_first_node*2+1];
-		float total_disp = TIME_STEP*vel[1];
-		float perc_disp = total_disp/cur_height;
-		for(int i = 0; i<n_lside; i++){
-			node = lsideNodes[i];
-			// #pragma unroll
-			if (R[node*2 + 1] == cur_height){
-				R[node*2 + 1] += 0;
-				// cout << "left: already top node" << endl;
-			}else{
-				R[node*2 + 1] += R[node*2 + 1]*perc_disp; 
-				// cout << "left: add percentage" << endl;
-			}	
-		}
-		for(int i = 0; i<n_rside; i++){
-			node = rsideNodes[i];
-			// #pragma unroll
-			if (R[node*2 + 1] == cur_height){
-				R[node*2 + 1] += 0;
-				// cout << "right: already top node" << endl;
-			}else{
-				R[node*2 + 1] += R[node*2 + 1]*perc_disp;
-				// cout << "right: add percentage" << endl;
-			} 	
-		}
-	}
 }
 
 // ----------------------------------------------------------------------- 

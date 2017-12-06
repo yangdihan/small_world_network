@@ -2,9 +2,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 ############# change #################
-L_origin = 50
+L_origin = 800
 TIME_STEP = 1e-2
-vel = 10.0
+vel = 50.0
 long_link_switch = True
 #######################################
 
@@ -22,6 +22,16 @@ stretch1 = []
 remain = []
 stretch2 = []
 
+
+def area(x,y):
+	s = 0
+	for i in range(len(y)-1):
+		if (y[i]!=y[i] or y[i+1]!=y[i+1]):
+			# check for nan
+			continue
+		s += y[i]+y[i+1]
+	return 0.5*s*x[-1]/len(x)
+
 # force and stretch
 deltaY = TIME_STEP*vel
 L = L_origin
@@ -34,7 +44,7 @@ for line in open(fdir, 'r'):
 		list_of_words = line.split()
 		sigma = float(list_of_words[1])
 		if (-sigma < 9.99*10**(-5)):
-				break
+			break
 		else:
 			stress.append(-sigma)
 			L += deltaY
@@ -46,9 +56,12 @@ for line in open(fdir, 'r'):
 				minF = -sigma
 	i += 1
 
+# call trapazoid quadrature
+energy = area(stretch1,stress)
+
 F_initial = minF
-stretch_u = round(stretch1[-1],2)
-stretch_max_f = round(stretch1[stress.index(maxF)],2)
+stretch_u = round(stretch1[-1],5)
+stretch_max_f = round(stretch1[stress.index(maxF)],5)
 
 #zoom in at peak
 critical_index = stress.index(maxF)
@@ -116,12 +129,12 @@ plt.tick_params(axis="y", labelcolor="r")
 plt.plot(stretch2,remain,'r',label='initial force is '+str(F_initial))
 plt.legend(loc=2)
 
-if (long_link_switch):
-	for j in range(num):
-		link_name = "long link #"+str(j+1)
-		plt.plot(stretch_collector[j],force_collector[j],label=link_name)
+# if (long_link_switch):
+# 	for j in range(num):
+# 		link_name = "long link #"+str(j+1)
+# 		plt.plot(stretch_collector[j],force_collector[j],label=link_name)
 
-ant = 'stretch@Fmax '+str(stretch_max_f)+' ; stretch final: '+str(stretch_u)
+ant = 'energy='+str(energy)+' ; stretch final: '+str(stretch_u)
 plt.title(ant)
 plt.savefig(fout)
 
