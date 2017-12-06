@@ -760,7 +760,6 @@ void Network::apply_crack(Cracklist & alist) {
 
 void pngPlotHelper(string png_size, string png_path, string xrange, string fname, string pic_name){
 	Gnuplot gnu;
-	gnu.cmd(setenv('GNUTERM','qt'));
 	gnu.cmd("set xrange " + xrange);
 	gnu.cmd("load 'viridis.pal'");
 	gnu.cmd("set key off");
