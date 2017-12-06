@@ -207,7 +207,7 @@ void Network::remove_duplicates(int& n_elems){
 			counter++;
 		}
 	}
-	cout<<counter<<endl;
+	// cout<<counter<<endl;
 	int* buffer = new int[2*counter];
 	for(i=0, k=0;i<n_elems;i++){
 		node1 = edges[2*i];
@@ -267,6 +267,9 @@ void Network::add_long_range_egdes_y(int n_add){
 	logger<< (this->meanX/this->meanXL);
 	logger<<"\n";
 	srand(time(NULL));
+
+	double pre_str_ct = 0;
+
 	for(int i = 0; i < n_add; i++){
 		// while(s<L_MEAN/4 || s>L_MEAN){ 
 		while(s<20*this->meanX || x_diff>3*meanX){ 
@@ -287,18 +290,8 @@ void Network::add_long_range_egdes_y(int n_add){
 		float x2 = R[node2*DIM+0];
 		float y2 = R[node2*DIM+1];
 
-		// if (PRESTRETCH){
-		// 	L[n_elems] = meanX/meanXL;
-		// }else{
-		// 	L[n_elems] = s/meanXL;
-		// }
 		L[n_elems] = ((1-PRESTRETCH)*s + PRESTRETCH*meanX)/meanXL;
-		cout << "prestretch of addition links are "<< s/L[n_elems] << endl;
-		// cout << "the node distance of this long link is " << endl;
-		// cout << s << endl;
-		// cout << "add this L is " << endl;
-		// cout << L[n_elems] << endl;
-		// update PBC;
+		pre_str_ct += s/L[n_elems];
 
 		//dihan add this :
 		logger<< R[node1*DIM + 0] <<"\t";
@@ -314,8 +307,9 @@ void Network::add_long_range_egdes_y(int n_add){
 
 		s = 0;
 	}
-
     logger.close();
+    pre_str_ct /= n_add;
+    cout << "average additional link prestretch is "<<pre_str_ct<< endl;
 	cout<<"Stored long link info in "<<fname<<"!\n";
 
 }
@@ -344,6 +338,9 @@ void Network::add_long_range_egdes_random(int n_add){
 	logger<< (this->meanX/this->meanXL);
 	logger<<"\n";
 	srand(time(NULL));
+
+	double pre_str_ct = 0;
+
 	for(int i = 0; i < n_add; i++){
 		// while(s<L_MEAN/4 || s>L_MEAN){ 
 		while(s<20*this->meanX){ 
@@ -362,22 +359,10 @@ void Network::add_long_range_egdes_random(int n_add){
 		float y1 = R[node1*DIM+1];
 		float x2 = R[node2*DIM+0];
 		float y2 = R[node2*DIM+1];
-		// float s_test = sqrt((x2-x1)*(x2-x1) + (y2-y1)*(y2-y1));
 
-
-
-		// update the contour lengths according to position
-		// if (PRESTRETCH){
-		// 	L[n_elems] = meanX/meanXL;
-		// }else{
-		// 	L[n_elems] = s/this->meanXL;
-		// }
 		L[n_elems] = ((1-PRESTRETCH)*s + PRESTRETCH*meanX)/meanXL;
-		cout << "prestretch of addition links are "<< s/L[n_elems] << endl;
-		// cout << "the node distance of this long link is " << endl;
-		// cout << s << endl;
-		// cout << "add this L is " << endl;
-		// cout << L[n_elems] << endl;
+		pre_str_ct += s/L[n_elems];
+
 		// update PBC;
 
 		//dihan add this :
@@ -394,24 +379,41 @@ void Network::add_long_range_egdes_random(int n_add){
 
 		// update damage
 		damage[n_elems] = 0;
-		// cout<<"Adding edge between "<<node1<<", "<<node2<<endl;
-		// cout<<"should be same as "<<edges[n_elems*2]<<", "<<edges[n_elems*2 + 1]<<endl;
-		// cout << "adding edges # is "<<n_elems*2<<endl;
-		// cout << "adding edges # is "<<n_elems*2+1<<endl;
-		// cout << "node to node distance is "<< dist(&R[node1*DIM], &R[node2*DIM]) << endl;
-		// cout << "calculate by hand "<< s_test << endl;
-		// increment n_elems
 		n_elems++;
 
 		s = 0;
 	}
 
     logger.close();
+    pre_str_ct /= n_add;
+    cout << "average additional link prestretch is "<<pre_str_ct<< endl;
 	cout<<"Stored long link info in "<<fname<<"!\n";
 
 }
 
+void Network::patterning(){
+	int x1 = 50;
+	int x2 = 150;
+	int y1 = 500;
+	int y2 = 600;
+	for (int i=0; i<n_nodes; i++){
+		if (R[i*DIM]>x1 && R[i*DIM+1]>y1 && R[i*DIM]<x2 && R[i*DIM+1]<y2){
+			// within sparsing scope
+			// int nodeX = R[i*DIM];
+			// int nodeY = R[i*DIM + 1];
+			if (i%2 == 0){
+				// just a random filter
+				for(int j=0; j<n_elems-1; j++){
+					if (edges[2*j]==i){
+						edges[2*j] = -1;
+						edges[2*j+1] = -1; 
+					}
+				}
+			}
 
+		}
+	}
+}
 
 
 
@@ -458,16 +460,16 @@ void Network::load_network(string& fname) {
 
 	// moving nodes
 	int c = 0;
-	if (SIDE_BC){
-		n_moving = n_nodes - n_tside - n_bside - n_lside - n_rside + 4;
-		moving_nodes = (int*)malloc(sizeof(int)*n_moving);
-		for(int i =0; i<n_nodes; i++){
-			if(!ismember(i, tsideNodes, n_tside) && !ismember(i, bsideNodes, n_bside) && !ismember(i, lsideNodes, n_tside) && !ismember(i, rsideNodes, n_bside)) {
-				moving_nodes[c] = i;
-				c++;
-			}
-		}
-	}else{
+	// if (SIDE_BC){
+	// 	n_moving = n_nodes - n_tside - n_bside - n_lside - n_rside + 4;
+	// 	moving_nodes = (int*)malloc(sizeof(int)*n_moving);
+	// 	for(int i =0; i<n_nodes; i++){
+	// 		if(!ismember(i, tsideNodes, n_tside) && !ismember(i, bsideNodes, n_bside) && !ismember(i, lsideNodes, n_tside) && !ismember(i, rsideNodes, n_bside)) {
+	// 			moving_nodes[c] = i;
+	// 			c++;
+	// 		}
+	// 	}
+	// }else{
 		n_moving = n_nodes - n_tside - n_bside;
 		moving_nodes = (int*)malloc(sizeof(int)*n_moving);
 		for(int i =0; i<n_nodes; i++){
@@ -475,7 +477,7 @@ void Network::load_network(string& fname) {
 				moving_nodes[c] = i;
 				c++;
 			}
-		}
+	
 	}
 	
 	
@@ -811,7 +813,7 @@ void epsPlotHelper(string eps_size, string eps_path, string xrange, string fname
 /// in the polymer else, they represent the damage in a polymer connection
 // -----------------------------------------------------------------------
 void Network::plotNetwork(int iter_step, bool first_time){
-	if (!EPS){
+	if (EPS == 0){
 		return;
 	}
 	ofstream f;
@@ -905,7 +907,6 @@ void Network::plotNetwork(int iter_step, bool first_time){
 	}
 	//Plot to h
 	float aspect_ratio = (MAXBOUND_X)/(R[tsideNodes[0]*DIM+1]); 
-	// float aspect_ratio = 8*(MAXBOUND_X)/(R[tsideNodes[0]*DIM+1]); 
 
 	stringstream convert;
 
@@ -918,30 +919,22 @@ void Network::plotNetwork(int iter_step, bool first_time){
 	string png_size = convert.str();
 	convert.str(std::string());
 
-
 	int eps_x_res = 40;
 	int eps_y_res = eps_x_res/aspect_ratio;
 	convert<<eps_x_res<<", "<<eps_y_res;
 	string eps_size = convert.str();
 	convert.str(std::string());
 
-	// string bs = "/";
-	// if (EPS){
-		std::stringstream ss;
+	std::stringstream ss;
 	ss << std::setw(5) << std::setfill('0') << iter_step;
 	std::string pic_name = ss.str();
-		string eps_path = std::string(FLDR_STRING) + "/graphs/" + pic_name + ".eps";
-		epsPlotHelper(eps_size, eps_path, xrange, fname, pic_name);
-	// }
-	// if (PNG){
-	// 	string png_path = std::string(FLDR_STRING) + "/" + std::to_string(iter_step) + ".png";
-	// 	pngPlotHelper(png_size, png_path, xrange, fname, iter_step);
-	// }
+	string eps_path = std::string(FLDR_STRING) + "/graphs/" + pic_name + ".eps";
+	epsPlotHelper(eps_size, eps_path, xrange, fname, pic_name);
 	
 }
 
 void Network::plotFrames(int iter_step, bool first_time){
-	if (!PNG){
+	if (PNG == 0){
 		return;
 	}
 	ofstream f;
@@ -949,8 +942,7 @@ void Network::plotFrames(int iter_step, bool first_time){
 	string fname = std::string(FLDR_STRING) + "/" + "frame_data.txt";
 	float c;
 	f.open(fname,std::ofstream::out | std::ofstream::trunc);
-	// std::default_random_engine seed;
-	// std::uniform_real_distribution<float> arbitcolor(0.0,1.0);
+
 	int node1, node2;
 	if(first_time){
 		float r1[DIM];
@@ -962,11 +954,6 @@ void Network::plotFrames(int iter_step, bool first_time){
 			node1 = edges[j * 2]; 
 			node2 = edges[j * 2 + 1];
 			
-			// // check if pair exists
-			// if(node1 == -1 || node2 == -1) {
-			// 	continue;
-			// }
-
 			// read the positions
 			#pragma unroll
 			for(k = 0; k<DIM; k++){
@@ -1035,7 +1022,6 @@ void Network::plotFrames(int iter_step, bool first_time){
 	}
 	//Plot to h
 	float aspect_ratio = (MAXBOUND_X)/(R[tsideNodes[0]*DIM+1]); 
-	// float aspect_ratio = 8*(MAXBOUND_X)/(R[tsideNodes[0]*DIM+1]); 
 
 	stringstream convert;
 
@@ -1055,18 +1041,11 @@ void Network::plotFrames(int iter_step, bool first_time){
 	string eps_size = convert.str();
 	convert.str(std::string());
 
-	// string bs = "/";
-	// if (EPS){
-	// 	string eps_path = std::string(FLDR_STRING) + "/graphs/" + std::to_string(iter_step) + ".eps";
-	// 	epsPlotHelper(eps_size, eps_path, xrange, fname, iter_step);
-	// }
-	// if (PNG){
 	std::stringstream ss;
-	ss << std::setw(5) << std::setfill('0') << int(iter_step/FRAME);
+	ss << std::setw(5) << std::setfill('0') << int(iter_step/PNG);
 	std::string pic_name = ss.str();
 		string png_path = std::string(FLDR_STRING) + "/frames/" + pic_name + ".png";
 		pngPlotHelper(png_size, png_path, xrange, fname, pic_name);
-	// }
 	
 }
 // ----------------------------------------------------------------------- 
@@ -1087,14 +1066,8 @@ int Network::get_current_edges(){
 
 void Network::get_edge_number(int* remain_chains, int iter, int curr_n_edges){
 	remain_chains[iter] = curr_n_edges;
-	// cout << "### input ### " << curr_n_edges << "###" << endl;
-	// cout << "### write ### " << remain_chains[iter] << "###" << endl;
 }
 
-// void write_edge_number(int i){
-// 	int edge_number = get_current_edges();
-
-// }
 // ----------------------------------------------------------------------- 
 /// \brief Prints out certain statistics of the network object.
 ///
@@ -1197,10 +1170,10 @@ bool Network::get_stats(){
 	// cout<<"node-node x/L max: "<<max_t<<endl;
 
 
-	if((float)c/(float)n_elems < 0.02){
-		cout<<"Too few edges remain in given mesh! Exiting...\n";
-		return true;
-	}
+	// if((float)c/(float)n_elems < 0.02){
+	// 	cout<<"Too few edges remain in given mesh! Exiting...\n";
+	// 	return true;
+	// }
 	return false;
 }
 

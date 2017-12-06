@@ -12,14 +12,16 @@
 #define vel_x 0.0f
 #define vel_y 50.0f
 //add by Dihan
-#define SIDE_BC false
+// #define SIDE_BC false
+#define WEIGHT_GOAL 1.0e6
 #define ROLLER true
 #define RANDOM_LONG 20
 #define RANDOM_Y 0
-#define PRESTRETCH 0.99
-#define EPS false
-#define PNG true
-#define FRAME 2
+#define PRESTRETCH 0.85
+#define EPS 0
+#define PNG 2
+#define PATTERN false
+// #define FRAME 2
 
 #define PI 3.141592653
 #define DIM 2

@@ -86,6 +86,7 @@ public:
 	virtual void clear();
 	void copy(Network const & source);
 	void dump(int,bool first_time = false);
+	void patterning();
 
 	bool cracked; 		///<Flag to check if the network has cracks
 	int n_nodes; 		///<Stores number of crosslinker nodes in the network

@@ -72,6 +72,10 @@ int main(int argc, char* argv[]) {
 	#endif
 	DECL_NET;
 
+	if (PATTERN){
+		test_network.patterning();
+	}
+
 	if(CRACKED){
 		// Specific crack
 		Crack a;
@@ -92,11 +96,11 @@ int main(int argc, char* argv[]) {
 		
 
 		// Weight goal: (Because bashing humans over their weight is not enough!)
-		float weight_goal = 1.0e6; // weight of similarly sized triangular mesh network
+		// weight of similarly sized triangular mesh network
 		float weight_multiplier;
 		float weight = test_network.get_weight();
-		if (weight<weight_goal){
-			weight_multiplier = test_network.set_weight(weight_goal);
+		if (weight<WEIGHT_GOAL){
+			weight_multiplier = test_network.set_weight(WEIGHT_GOAL);
 		}
 
 		bool should_stop = test_network.get_stats();
@@ -119,6 +123,7 @@ int main(int argc, char* argv[]) {
 
 		int old_n_edges = test_network.get_current_edges();
 		int curr_n_edges = old_n_edges;
+		int total_n_edges = curr_n_edges;
 		// add by Dihan
 		int broke_thres = int(0.9*double(old_n_edges));
 
@@ -149,10 +154,11 @@ int main(int argc, char* argv[]) {
 		int first_few = STEPS/100;
 		double plate_force_new;
 		double plate_force_min;
-
+		double progress;
 
 		for(int i = 1; i<STEPS; i++ ){
-			cout << "progress: "<< 100*i/STEPS<< " %" <<endl;
+			progress = double(i)/double(STEPS) + (1-double(i)/double(STEPS))*double(total_n_edges-curr_n_edges)/double(total_n_edges);
+			cout << "progress: "<< 100*progress<< " %" <<endl;
 			// The "optimize-move_top_plate-get_plate_forces" do all the work
 			test_network.optimize();
 
@@ -171,26 +177,27 @@ int main(int argc, char* argv[]) {
 
 
 			if (should_move){// see if network is self-equilibrium
-				// cout << "moving plate!!" << endl;
 				test_network.move_top_plate();
 			}
 
 			if (long_links){// record long link status
 				test_network.get_long_link_status(long_link_forces, long_link_node_pos, long_link_orient, i);
 			}
+
 			should_stop = test_network.get_stats();
 			// add by Dihan
 			curr_n_edges = test_network.get_current_edges();
 			test_network.get_edge_number(remain_chains, i, curr_n_edges);
-			if (i%int(FRAME) == 0){
-				test_network.plotFrames(i, false);
+			if (PNG != 0){
+				if (i%int(PNG) == 0){
+					test_network.plotFrames(i, false);
+				}
 			}
-			test_network.plotNetwork(i, false);
-			// But add more lines, just to show-off.
-			// first several step
-			
-			// if (i<=first_few){
-			
+			if (EPS != 0){
+				if (i%int(EPS) == 0){
+					test_network.plotNetwork(i, false);
+				}
+			}
 			
 			// if(curr_n_edges<=old_n_edges){
 			// 	test_network.plotNetwork(i, false);
@@ -212,71 +219,8 @@ int main(int argc, char* argv[]) {
 			// 	break;
 			// }
 			
-			// cout<<"Step "<<(i+1)<<" took "<<float(clock()-t)/CLOCKS_PER_SEC<<" s\n";
+			cout<<"Step "<<(i+1)<<" took "<<float(clock()-t)/CLOCKS_PER_SEC<<" s\n";
 			t = clock();
-				// continue;
-			// }
-
-			// if((i+1)%100 == 0){
-			// 	should_stop = test_network.get_stats();
-			// 	// curr_n_edges = test_network.get_current_edges();
-				
-			// 	// if(curr_n_edges<=old_n_edges){
-			// 	// 	test_network.plotNetwork(i, false);
-			// 	// 	test_network.dump(i);
-			// 	// }
-			// 	test_network.plotNetwork(i, false);
-			// 	// test_network.dump(i);
-			// 	if(should_stop){
-			// 		break;
-			// 	}
-
-
-			// 	new_time_per_iter = float(clock()-t)/CLOCKS_PER_SEC;
-			// 	if(i==0){
-			// 		old_time_per_iter = new_time_per_iter;
-			// 	}
-
-			// 	if(new_time_per_iter < 0.1*old_time_per_iter){
-			// 		cout<<"Seems like very few edges remain! \n";
-			// 		break;
-			// 	}
-				
-			// 	cout<<"Step "<<(i+1)<<" took "<<float(clock()-t)/CLOCKS_PER_SEC<<" s\n";
-			// 	t = clock();  // reset clock
-			// 	continue;
-			// }
-
-
-			// // breaking bond steps more details
-			// if(curr_n_edges < broke_thres && curr_n_edges > 0) {
-			// 	should_stop = test_network.get_stats();
-			// 	// curr_n_edges = test_network.get_current_edges();
-				
-			// 	// if(curr_n_edges<=old_n_edges){
-			// 	// 	test_network.plotNetwork(i, false);
-			// 	// 	test_network.dump(i);
-			// 	// }
-			// 	test_network.plotNetwork(i, false);
-			// 	// test_network.dump(i);
-			// 	if(should_stop){
-			// 		break;
-			// 	}
-
-			// 	new_time_per_iter = float(clock()-t)/CLOCKS_PER_SEC;
-			// 	if(i==0){
-			// 		old_time_per_iter = new_time_per_iter;
-			// 	}
-
-			// 	if(new_time_per_iter < 0.1*old_time_per_iter){
-			// 		cout<<"Seems like very few edges remain! \n";
-			// 		break;
-			// 	}
-				
-			// 	// cout<<"Step "<<(i+1)<<" took "<<float(clock()-t)/CLOCKS_PER_SEC<<" s\n";
-			// 	t = clock();
-			// 	continue;
-			// }
 
 		}
 
@@ -291,9 +235,9 @@ int main(int argc, char* argv[]) {
 
 		write_edge_number<int>(fname2, remain_chains, STEPS);
 		// add by Dihan
-		if (PNG){
+		if (PNG != 0){
 			cout << "#### rendering animation ####" << endl;
-			string arg3 = "ffmpeg -f image2 -r "+std::to_string(int(20/FRAME))+" -i ./"+std::string(FLDR_STRING)+"/frames/%05d.png -vcodec mpeg4 -y ./"+std::string(FLDR_STRING)+"/movie.mp4";
+			string arg3 = "ffmpeg -f image2 -r "+std::to_string(int(20/PNG))+" -i ./"+std::string(FLDR_STRING)+"/frames/%05d.png -vcodec mpeg4 -y ./"+std::string(FLDR_STRING)+"/movie.mp4";
 			system(arg3.c_str());
 			string arg4 = "rm ./"+std::string(FLDR_STRING)+"/frames/*.png";
 			system(arg4.c_str());
