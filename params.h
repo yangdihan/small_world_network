@@ -43,8 +43,8 @@
 // int that indicates the number of patterned regions: how many stripes for "layer" or how many round-regions for "spot".
 #define PATTERN_NUM 3
 
-// float that indicates the probability that a chain will be eliminated from origin network to make pattern. (this strategy is going to be changed)
-#define PATTERN_RATE 0.9
+// float that indicates how many times sparser the patterned region will be
+#define PATTERN_RATE 3
 
 // other constant definations:
 #define PI 3.141592653

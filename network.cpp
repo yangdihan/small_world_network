@@ -390,7 +390,7 @@ void Network::add_long_range_egdes_y(int n_add){
 /// \brief Create patterned regions on this network
 ///	\param type (string) --> indicates the pattern type is "layer" or "spot" on this network
 ///	\param region_number (int) --> indicate how many patterned region is demanded for certain type on this network
-///	\param rate (float) --> indicates the probability that a chain will be eliminated from origin network to make pattern. (this strategy is going to be changed)
+///	\param rate (float) --> indicates how many times sparser the patterned region will be
 // -----------------------------------------------------------------------
 void Network::patterning(string type, int region_number, double rate){
 	if (type == "none"){
@@ -399,13 +399,13 @@ void Network::patterning(string type, int region_number, double rate){
 
 	if (type == "layer"){
 		// int n_elems_per_layer = n_elems/(2*region_number+1);
-		double thick = MAXBOUND_Y/(2*region_number+1);
-		
+		double unit_thick = MAXBOUND_Y/(region_number+(region_number+1)*rate);
+		cout << "divide to "<<MAXBOUND_Y/unit_thick<<" parts"<<endl;
 		double r = 0;
 		int ct = 0;
 		for (int i=0; i<region_number; i++){// in one region
 			// int* target_edge = new int[2*n_elems_per_layer];
-			int add_num = 0;
+			// int add_num = 0;
 
 			for (int e=0; e<n_elems; e++){// check all elems, delete and record
 
@@ -414,20 +414,20 @@ void Network::patterning(string type, int region_number, double rate){
 
 				double cur_ini_y = R[2*edges[2*e+0]+1];
 				double cur_end_y = R[2*edges[2*e+1]+1];
-				double region_low = (2*i+1)*thick;
-				double region_top = (2*i+2)*thick;
-				// cout <<"bound is "<<region_low<<" and "<<region_top<<endl;
+				double region_low = (i+1)*rate*unit_thick + i*unit_thick;
+				double region_top = region_low+unit_thick;
+				cout <<"bound is "<<region_low<<" and "<<region_top<<endl;
 				if ((cur_ini_y>region_low && cur_ini_y<region_top) && (cur_end_y>region_low && cur_end_y<region_top)){
 					// cout << "this edge has y = "<< cur_ini_y << " and "<<"cur_end_y"<<endl;
 					// target_edge[add_num*2 + 0] = edges[2*e+0];
 					// target_edge[add_num*2 + 1] = edges[2*e+1];
 					// srand(time(NULL));
 					if ((!ismember(edges[2*e+0], lsideNodes, n_lside)) && (!ismember(edges[2*e+0], rsideNodes, n_rside)) && (!ismember(edges[2*e+1], lsideNodes, n_lside)) && (!ismember(edges[2*e+1], rsideNodes, n_rside))){
-						if (rand()%int(1/(1-rate)) == 0){// change this for rate
-							edges[2*e+0] = -1;
-							edges[2*e+1] = -1;
-							add_num += 1;
-						}
+						// if (rand()%int(1/(1-rate)) == 0){// change this for rate
+							L[e] *= rate;
+							// L[2*e+1] *= 3;
+							// add_num += 1;
+						// }
 					}
 				}
 				// if (add_num == n_elems_per_layer){

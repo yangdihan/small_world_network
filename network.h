@@ -119,7 +119,7 @@ public:
 	 *	the function will generate patterned regions on this network
 	 *	type is a string that indicates the pattern type is "layer" or "spot" on this network
 	 *	region_number is a int that indicate how many patterned region is demanded for certain type on this network
-	 *	rate is a float that indicates the probability that a chain will be eliminated from origin network to make pattern. (this strategy is going to be changed)
+	 *	rate is a float that indicates how many times sparser the patterned region will be
 	 */
 	void patterning(string type, int region_number, double rate);
 
