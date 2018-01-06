@@ -52,12 +52,26 @@ public:
 	virtual void build_network();
 	void side_nodes();
 	void remove_duplicates(int&);
-	// for small world network
-	// void add_long_range_egdes_y(int, float);
-	// void add_long_range_egdes_random(int, float);
+
+	/** add by Dihan
+	 *	the function to impose additional random long chains to this network
+	 */
 	void add_long_range_egdes_random(int);
+
+	/** add by Dihan
+	 *	the function to impose additional random long chains to this network
+	 *	imposed chains only in vertical direction
+	 */
 	void add_long_range_egdes_y(int);
+
+	/** add by Dihan
+	 *	the float that represent the average stretch value among all regular chains before applying load
+	 */
 	double meanXL;
+
+	/** add by Dihan
+	 *	the float that represent the average node-to-node distance among all regular chains before applying load
+	 */
 	double meanX;
 
 
@@ -68,7 +82,11 @@ public:
 	virtual void get_forces(bool);
 	virtual void move_top_plate();
 	virtual void get_plate_forces(float*, int);
-	// add by Dihan
+
+	/** add by Dihan
+	 *	the function will update arrays that store the info about long chains, at each itration
+	 *	including internal forces, end node coordinate and orientation
+	 */
 	virtual void get_long_link_status(float* long_link_forces, float* long_link_node_pos, float* long_link_orient, int iter);
 
 	virtual void optimize(float eta = 0.1, float alpha = 0.9, int max_iter = 800);
@@ -77,16 +95,33 @@ public:
 	bool get_stats();
 	int get_current_edges();
 
-	//add this Oct 25
+	/** add by Dihan
+	 *	the function will update the array that stores the number of remaining chains in the network
+	 */
 	virtual void get_edge_number(int* remain_chains, int iter, int curr_n_edges);
 
+	/** add by Dihan
+	 *	the function will output a eps file for the configuration of the network at that iteration
+	 */
 	virtual void plotNetwork(int, bool);
-	//add by Dihan
+
+	/** add by Dihan
+	 *	the function will output a png file for the configuration of the network at that iteration
+	 * 	these png files will be used to generate animation at last and will be deleted after the animation is generated
+	 */
 	virtual void plotFrames(int, bool);
+
 	virtual void clear();
 	void copy(Network const & source);
 	void dump(int,bool first_time = false);
-	void patterning();
+
+	/** add by Dihan
+	 *	the function will generate patterned regions on this network
+	 *	type is a string that indicates the pattern type is "layer" or "spot" on this network
+	 *	region_number is a int that indicate how many patterned region is demanded for certain type on this network
+	 *	rate is a float that indicates the probability that a chain will be eliminated from origin network to make pattern. (this strategy is going to be changed)
+	 */
+	void patterning(string type, int region_number, double rate);
 
 	bool cracked; 		///<Flag to check if the network has cracks
 	int n_nodes; 		///<Stores number of crosslinker nodes in the network

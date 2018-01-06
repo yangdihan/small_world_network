@@ -55,14 +55,16 @@ int main(int argc, char* argv[]) {
 	Note: mpirun -np <numprocs> <executable> <filename.msh> 1 
 	*/
 	string path = argv[1];
-	// add by Dihan
-	// string temp_arg = "cd ./"+std::string(FLDR_STRING);
-	// system(temp_arg.c_str());
+
+/** add by Dihan
+ *	create two folders: 
+ * 	"frames" to store the .png format pictures as frames for final animation;
+ *	"graphs" to store the .eps files for publication use.
+ */
 	string arg1 = "mkdir ./"+std::string(FLDR_STRING)+"/graphs";
 	string arg2 = "mkdir ./"+std::string(FLDR_STRING)+"/frames";
 	system(arg1.c_str());
 	system(arg2.c_str());
-	// system("cd ../");
 
 
 	#if SACBONDS
@@ -72,40 +74,35 @@ int main(int argc, char* argv[]) {
 	#endif
 	DECL_NET;
 
-	if (PATTERN){
-		test_network.patterning();
-	}
+/** add by Dihan
+ *	call the patterning function to add pattern according to pre-defined patterning condition from param.h
+ */
+	test_network.patterning(PATTERN_TYPE, PATTERN_NUM, PATTERN_RATE);
 
 	if(CRACKED){
 		// Specific crack
 		Crack a;
 		a.setter(MAXBOUND_X, MAXBOUND_Y/2.0, MAXBOUND_X/10.0, MAXBOUND_Y/10.0, 0.0, 1.0);
-
 		Cracklist definite_cracks(a);
 		test_network.apply_crack(definite_cracks);
 		cout<<__LINE__<<endl;
-
-		// Random cracks
-		// Cracklist random_cracks(4);
-		// test_network.apply_crack(random_cracks);
 	}
 
-	//*argv[2] if is working now. Do not change
 	if (*argv[2]!='1') {
 		cout<<"Running serial version of the code: \n";
-		
-
-		// Weight goal: (Because bashing humans over their weight is not enough!)
-		// weight of similarly sized triangular mesh network
+	
 		float weight_multiplier;
 		float weight = test_network.get_weight();
 		if (weight<WEIGHT_GOAL){
 			weight_multiplier = test_network.set_weight(WEIGHT_GOAL);
 		}
-
 		bool should_stop = test_network.get_stats();
 		
-		// add by Dihan to try long links
+	/** add by Dihan 
+	 *	call functions to add random long links to the network when RANDOM_LONG or RANDOM_Y is not zero
+	 *	store info for long links including internal forces, node position and orientation in three array
+	 *	arrays are initialized here
+	 */
 		bool long_links = (RANDOM_LONG+RANDOM_Y > 0);
 		float* long_link_forces;
 		float* long_link_node_pos;
@@ -124,22 +121,27 @@ int main(int argc, char* argv[]) {
 		int old_n_edges = test_network.get_current_edges();
 		int curr_n_edges = old_n_edges;
 		int total_n_edges = curr_n_edges;
-		// add by Dihan
-		int broke_thres = int(0.9*double(old_n_edges));
 
 		if(should_stop){cout<<"Simulation needs to stop!\n";return 0;}
-		float* plate_forces;
 
+		float* plate_forces;
 		plate_forces = (float*)malloc(sizeof(float)*DIM*STEPS);
 		memset(plate_forces, 0.0, STEPS*DIM*sizeof(float));
-		// add by Dihan
+
+	/** add by Dihan
+	 *	store number of remaining chains in a array of int
+	 *	initialize array here
+	 */
 		int* remain_chains;
 		remain_chains = (int*)malloc(sizeof(int)*STEPS);
 		memset(remain_chains, 0, STEPS*sizeof(int));
 
+	/** add by Dihan
+	 *	determine whether need to output .png and .eps files at certain frequency
+	 */
 		test_network.plotNetwork(0, true);
 		test_network.plotFrames(0, true);
-		// 
+
 		// test_network.dump(0, true);
 
 		// For time is endless but your time...not so much!  
@@ -149,45 +151,52 @@ int main(int argc, char* argv[]) {
 		cout<<"\n Will run for "<<STEPS<<":\n";
 		
 
-		// get the initial top plate force (not equilibrium)
+	/** add by Dihan
+	 *	initialize float about top plate force, and bool to control whether to move the top plate at given rate
+	 *	The bool is set to false at first: we will let the network to equilibrium itself before start moving it
+	 *	The strategy is if at next iteration, the top plate force is no longer changing, then we start moving top plate since next iteration
+	 */
 		bool should_move = false;
 		int first_few = STEPS/100;
 		double plate_force_new;
 		double plate_force_min;
-		double progress;
 
 		for(int i = 1; i<STEPS; i++ ){
-			progress = double(i)/double(STEPS) + (1-double(i)/double(STEPS))*double(total_n_edges-curr_n_edges)/double(total_n_edges);
-			cout << "progress: "<< 100*progress<< " %" <<endl;
 			// The "optimize-move_top_plate-get_plate_forces" do all the work
 			test_network.optimize();
-
-			// collect stats
 			test_network.get_plate_forces(plate_forces, i);
 
-			// if force start to increase, we should move top plate
-
+		/** add by Dihan
+		 *	if force start to increase, we should move top plate
+		 */
 			plate_force_new = -plate_forces[DIM*i + 1];
-			// cout << "now the force is: "<< plate_force_new << endl;
 			if (i == 1 || plate_force_new < plate_force_min){
 				plate_force_min = plate_force_new;
 			}else{
 				should_move = true;
 			}
-
-
-			if (should_move){// see if network is self-equilibrium
+			if (should_move){
 				test_network.move_top_plate();
 			}
 
-			if (long_links){// record long link status
+		/** add by Dihan
+		 *	update info about long_link_forces, long_link_node_pos, long_link_orient at this iteration in corresponding array
+		 */
+			if (long_links){
 				test_network.get_long_link_status(long_link_forces, long_link_node_pos, long_link_orient, i);
 			}
 
 			should_stop = test_network.get_stats();
-			// add by Dihan
+
+		/** add by Dihan
+		 *	update number of remaining chains at this iteration in corresponding array
+		 */
 			curr_n_edges = test_network.get_current_edges();
 			test_network.get_edge_number(remain_chains, i, curr_n_edges);
+
+		/** add by Dihan
+		 *	output png or eps file if should at this iteration
+		 */
 			if (PNG != 0){
 				if (i%int(PNG) == 0){
 					test_network.plotFrames(i, false);
@@ -208,33 +217,41 @@ int main(int argc, char* argv[]) {
 			if(should_stop){
 				break;
 			}
-
 			new_time_per_iter = float(clock()-t)/CLOCKS_PER_SEC;
 			if(i==0){
 				old_time_per_iter = new_time_per_iter;
 			}
-
 			// if(new_time_per_iter < 0.1*old_time_per_iter){
 			// 	cout<<"Seems like very few edges remain! \n";
 			// 	break;
 			// }
-			
 			cout<<"Step "<<(i+1)<<" took "<<float(clock()-t)/CLOCKS_PER_SEC<<" s\n";
 			t = clock();
 
 		}
 
-		// For names allow unique identification. Well, almost! 
-		string sb = SACBONDS ? "true" : "false" ; 
-		// string fname = std::string(FLDR_STRING) + "/" + std::to_string(L_STD/L_MEAN) + "_" + sb + ".txt";
-		// string fname2 = std::string(FLDR_STRING) + "/" + std::to_string(L_STD/L_MEAN) + "_" + "remain_chains" + ".txt";
+	/** add by Dihan
+	 *	define name of output files and generate corresponding txt files
+	 *	forces.txt stores the vertical and horizontal forces on top plate
+	 *	remain_chains.txt stores the number of remaining chains at each iteration
+	 *	add_long_link_info.txt stores the info about additional long chains at each iteration
+	 */
 		string fname = std::string(FLDR_STRING) + "/" + "forces.txt";
 		string fname2 = std::string(FLDR_STRING) + "/" + "remain_chains.txt";
 		string fname3 = std::string(FLDR_STRING) + "/" + "add_long_link_info.txt";
 		write_to_file<float>(fname, plate_forces, STEPS, DIM);
-
 		write_edge_number<int>(fname2, remain_chains, STEPS);
-		// add by Dihan
+		if (long_links){
+			write_long_link<float>(fname3, long_link_forces, long_link_node_pos, long_link_orient, STEPS);
+			free(long_link_forces);
+			free(long_link_node_pos);
+			free(long_link_orient);
+		}
+
+	/** add by Dihan
+	 *	generate .mp4 animation from .png files in frames folder
+	 *	copy plot.py file to same folder which is used for ploting force-stretch diagram
+	 */
 		if (PNG != 0){
 			cout << "#### rendering animation ####" << endl;
 			string arg3 = "ffmpeg -f image2 -r "+std::to_string(int(20/PNG))+" -i ./"+std::string(FLDR_STRING)+"/frames/%05d.png -vcodec mpeg4 -y ./"+std::string(FLDR_STRING)+"/movie.mp4";
@@ -243,22 +260,13 @@ int main(int argc, char* argv[]) {
 			system(arg4.c_str());
 			cout << "#### animation saved as movie.mp4 ####" << endl;
 		}
-		if (long_links){
-			write_long_link<float>(fname3, long_link_forces, long_link_node_pos, long_link_orient, STEPS);
-			free(long_link_forces);
-			free(long_link_node_pos);
-			free(long_link_orient);
-		}
+		string arg5 = "cp plot.py ./"+std::string(FLDR_STRING)+"/";
+		system(arg5.c_str());
+
 
 		free(plate_forces);
 		free(remain_chains);
-		string arg5 = "cp plot.py ./"+std::string(FLDR_STRING)+"/";
-		system(arg5.c_str());
-		// string arg6 = "cd ./"+std::string(FLDR_STRING);
-		// system(arg6.c_str());
-		// string arg7 = "python3 plot.py";
-		// system(arg7.c_str());
-		// animation();
+
 
 	}
 	else {

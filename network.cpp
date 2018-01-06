@@ -135,12 +135,15 @@ void Network::malloc_network(string& fname){
 	size_t si = sizeof(int);
 	size_t sb = sizeof(bool);
 
+	/** modified by Dihan
+	 *	alloacte memory for potential additional chains for arrays storing edges, forces, L, PBC, damage
+	 */
 	R = (float*)malloc(n_nodes*DIM*sf);
-	edges = (int*)malloc(n_elems*2*si);
+	edges = (int*)malloc((RANDOM_LONG+RANDOM_Y+n_elems)*2*si);
 	forces = (float*)malloc(n_nodes*DIM*sf);
-	damage = (float*)malloc(n_elems*sf);
-	L = (float* )malloc(n_elems*sf);
-	PBC = (bool* )malloc(n_elems*sb);
+	damage = (float*)malloc((RANDOM_LONG+RANDOM_Y+n_elems)*sf);
+	L = (float* )malloc((RANDOM_LONG+RANDOM_Y+n_elems)*sf);
+	PBC = (bool* )malloc((RANDOM_LONG+RANDOM_Y+n_elems)*sb);
 
 	// 	initialise n_xside for side nodes
 	n_rside = 0;
@@ -237,15 +240,83 @@ void Network::remove_duplicates(int& n_elems){
 }
 
 
+
 // ----------------------------------------------------------------------- 
-/// \brief Adds y-directional long range edges to the network. Chooses two nodes
-/// uniformly at random from the n_add divisions in x_direction such that the 
-/// distance between them is at least 0.25*L_MEAN and at max L_MEAN
-///
-/// \param n_add number of long range y-connections to add
-/// \param prestrech float between 0.01,0.99 to give initial x/L of these long range bonds
-/// If value is not between (0.01,0.99), 0.25 is assumed 
-///
+/// \brief Adds random long range edges to the network. 
+///	\param n_add (int) --> specify how many links will be added
+///	a new log file called add_link_tracker.txt will firstly be generated
+/// add_link_tracker.txt will firstly record the average node-node distance and contour length of original network
+/// add_link_tracker.txt will then record end node coordinate of each additional chain, its node-node distance and its contour length
+/// the number of additional chains will be controlled under half of original regular chains
+/// the node-node distance of additional chains will be 20 times longer than regular chains
+/// the prestretch of additional chain will be set acoording to prestretch-rate defined by me (see param.h)
+/// 
+// -----------------------------------------------------------------------
+
+void Network::add_long_range_egdes_random(int n_add){
+	if (n_add == 0){
+		return;
+	}
+	cout<<"Asked to add "<<n_add<<" more edges!\n";
+	int node1, node2;
+	float s = 0;
+
+	if(n_add >= n_elems/2){
+		cout<<"You're asking for too many long range bonds,"
+				" can't do it! I will add none and continue..."<<endl;
+	}
+	string fname = std::string(FLDR_STRING) + "/add_link_tracker.txt";
+	ofstream logger;
+	logger.open(fname, ios::trunc|ios_base::out);
+	logger<< this->meanX <<"\t";
+	logger<< (this->meanX/this->meanXL);
+	logger<<"\n";
+	srand(time(NULL));
+
+	double pre_str_ct = 0;
+
+	for(int i = 0; i < n_add; i++){
+		while(s < 20*meanX){ 
+			node1 = rand()%(n_nodes - 4) + 4;
+			node2 = rand()%(n_nodes - 4) + 4;
+			s = dist(&R[node1*DIM], &R[node2*DIM]);
+		}
+
+		edges[n_elems*2] = node1;
+		edges[n_elems*2 + 1] = node2;
+		L[n_elems] = ((1-PRESTRETCH)*s + PRESTRETCH*meanX)/meanXL;
+		pre_str_ct += s/L[n_elems];
+
+		logger<< R[node1*DIM + 0] <<"\t";
+		logger<< R[node1*DIM + 1] <<"\t";
+		logger<< R[node2*DIM + 0] <<"\t";
+		logger<< R[node2*DIM + 1] <<"\t";
+		logger<< s <<"\t";
+		logger<< L[n_elems];
+		logger<<"\n";
+
+		// update PBC;
+		PBC[n_elems] =  false;
+
+		// update damage
+		damage[n_elems] = 0;
+		n_elems++;
+
+		s = 0;
+	}
+
+    logger.close();
+    pre_str_ct /= n_add;
+    cout << "average additional link prestretch is "<<pre_str_ct<< endl;
+	cout<<"Stored long link info in "<<fname<<"!\n";
+
+}
+
+// ----------------------------------------------------------------------- 
+/// \brief Adds y-directional long range edges to the network. 
+///	Basically same as the random direction function. 
+/// Note that the orientation is not strictly vertical, since the mesh grids are not uniform
+/// the horizontal coordination difference between two end is constrained by 3 times of node-node distance of regular chains
 // -----------------------------------------------------------------------
 
 void Network::add_long_range_egdes_y(int n_add){
@@ -293,7 +364,7 @@ void Network::add_long_range_egdes_y(int n_add){
 		L[n_elems] = ((1-PRESTRETCH)*s + PRESTRETCH*meanX)/meanXL;
 		pre_str_ct += s/L[n_elems];
 
-		//dihan add this :
+		// log file:
 		logger<< R[node1*DIM + 0] <<"\t";
 		logger<< R[node1*DIM + 1] <<"\t";
 		logger<< R[node2*DIM + 0] <<"\t";
@@ -313,106 +384,152 @@ void Network::add_long_range_egdes_y(int n_add){
 	cout<<"Stored long link info in "<<fname<<"!\n";
 
 }
+
+
 // ----------------------------------------------------------------------- 
-/// \brief Adds random long range edges to the network. Chooses two nodes
-/// uniformly at random and adds an edge with x/L = 0.25 (i.e. prestressed)
-///
+/// \brief Create patterned regions on this network
+///	\param type (string) --> indicates the pattern type is "layer" or "spot" on this network
+///	\param region_number (int) --> indicate how many patterned region is demanded for certain type on this network
+///	\param rate (float) --> indicates the probability that a chain will be eliminated from origin network to make pattern. (this strategy is going to be changed)
 // -----------------------------------------------------------------------
-// void Network::add_long_range_egdes_random(int n_add, float prestretch){
-void Network::add_long_range_egdes_random(int n_add){
-	if (n_add == 0){
+void Network::patterning(string type, int region_number, double rate){
+	if (type == "none"){
 		return;
 	}
-	cout<<"Asked to add "<<n_add<<" more edges!\n";
-	int node1, node2;
-	float s = 0;
 
-	if(n_add >= n_elems/2){
-		cout<<"You're asking for too many long range bonds,"
-				" can't do it! I will add none and continue..."<<endl;
-	}
-	string fname = std::string(FLDR_STRING) + "/add_link_tracker.txt";
-	ofstream logger;
-	logger.open(fname, ios::trunc|ios_base::out);
-	logger<< this->meanX <<"\t";
-	logger<< (this->meanX/this->meanXL);
-	logger<<"\n";
-	srand(time(NULL));
-
-	double pre_str_ct = 0;
-
-	for(int i = 0; i < n_add; i++){
-		// while(s<L_MEAN/4 || s>L_MEAN){ 
-		while(s<20*this->meanX){ 
-			node1 = rand()%(n_nodes - 4) + 4;
-			node2 = rand()%(n_nodes - 4) + 4;
+	if (type == "layer"){
+		// int n_elems_per_layer = n_elems/(2*region_number+1);
+		double thick = MAXBOUND_Y/(2*region_number+1);
 		
-			s = dist(&R[node1*DIM], &R[node2*DIM]);
+		double r = 0;
+		int ct = 0;
+		for (int i=0; i<region_number; i++){// in one region
+			// int* target_edge = new int[2*n_elems_per_layer];
+			int add_num = 0;
+
+			for (int e=0; e<n_elems; e++){// check all elems, delete and record
+
+				r += dist(&R[edges[2*e+0]*DIM], &R[edges[2*e+1]*DIM]);
+				ct += 1;
+
+				double cur_ini_y = R[2*edges[2*e+0]+1];
+				double cur_end_y = R[2*edges[2*e+1]+1];
+				double region_low = (2*i+1)*thick;
+				double region_top = (2*i+2)*thick;
+				// cout <<"bound is "<<region_low<<" and "<<region_top<<endl;
+				if ((cur_ini_y>region_low && cur_ini_y<region_top) && (cur_end_y>region_low && cur_end_y<region_top)){
+					// cout << "this edge has y = "<< cur_ini_y << " and "<<"cur_end_y"<<endl;
+					// target_edge[add_num*2 + 0] = edges[2*e+0];
+					// target_edge[add_num*2 + 1] = edges[2*e+1];
+					// srand(time(NULL));
+					if ((!ismember(edges[2*e+0], lsideNodes, n_lside)) && (!ismember(edges[2*e+0], rsideNodes, n_rside)) && (!ismember(edges[2*e+1], lsideNodes, n_lside)) && (!ismember(edges[2*e+1], rsideNodes, n_rside))){
+						if (rand()%int(1/(1-rate)) == 0){// change this for rate
+							edges[2*e+0] = -1;
+							edges[2*e+1] = -1;
+							add_num += 1;
+						}
+					}
+				}
+				// if (add_num == n_elems_per_layer){
+				// 	// cout <<"delete "<<add_num<< "links"<<endl;
+				// 	break;
+				// }
+		}// delete done
+		// srand(time(NULL));
+		// cout <<"need to add "<<int(n_elems_per_layer*rate)<<" links"<<endl;
+		// double mean = r/ct;
+		// cout<<"average node-node distance is "<<mean<<endl;
+		// cout <<"threshold is "<< mean/rate<<endl;
+		// for (int j=0; j<int(n_elems_per_layer*rate); j++){// random add some
+		// 	double s = MAXBOUND_X;
+		// 	int node1;
+		// 	int node2;
+
+		// 	while (s > thick/rate){
+		// 		node1 = target_edge[rand()%(2*n_elems_per_layer)];
+		// 		node2 = target_edge[rand()%(2*n_elems_per_layer)];
+		// 		s = dist(&R[node1*DIM], &R[node2*DIM]);
+		// 	}
+		// 	// cout<<"node-1 index: "<<node1<<endl;
+		// 	// cout<<"node-2 index: "<<node2<<endl;
+		// 	// cout << "add two nodes with distance "<<s<<endl;
+		// 	// cout<<"now we have totaly "<<n_elems<<" links";
+		// 	edges[n_elems*2] = node1;
+		// 	edges[n_elems*2 + 1] = node2;
+		// 	L[n_elems] = s/meanXL;
+		// 	PBC[n_elems] =  false;
+		// 	damage[n_elems] = 0;
+		// 	n_elems++;
 		}
-
-		// add nodes to edges array
-		edges[n_elems*2] = node1;
-		edges[n_elems*2 + 1] = node2;
-
-
-		float x1 = R[node1*DIM+0];
-		float y1 = R[node1*DIM+1];
-		float x2 = R[node2*DIM+0];
-		float y2 = R[node2*DIM+1];
-
-		L[n_elems] = ((1-PRESTRETCH)*s + PRESTRETCH*meanX)/meanXL;
-		pre_str_ct += s/L[n_elems];
-
-		// update PBC;
-
-		//dihan add this :
-		logger<< R[node1*DIM + 0] <<"\t";
-		logger<< R[node1*DIM + 1] <<"\t";
-		logger<< R[node2*DIM + 0] <<"\t";
-		logger<< R[node2*DIM + 1] <<"\t";
-		logger<< s <<"\t";
-		logger<< L[n_elems];
-		logger<<"\n";
-
-
-		PBC[n_elems] =  false;
-
-		// update damage
-		damage[n_elems] = 0;
-		n_elems++;
-
-		s = 0;
+		// delete[] target_edge;
 	}
+	
+	if (type == "spot"){
+		double gridX = MAXBOUND_X/(1+region_number);
+		double gridY = MAXBOUND_Y/(1+region_number);
+		double radius;
+		if (gridX > gridY){
+			radius = 0.414*gridY;
+		}else{
+			radius = 0.414*gridX;
+		}
+		double center_x, center_y;
+		int idx, x_idx, y_idx;
+		srand(time(NULL));
+		for (int i=0; i<region_number; i++){
+			int idx = rand()%(region_number*region_number) + 1;
+			x_idx = floor((idx-1)/region_number + 1);
+			y_idx = idx%region_number + 1;
+			center_x = x_idx*gridX;
+			center_y = y_idx*gridY;
 
-    logger.close();
-    pre_str_ct /= n_add;
-    cout << "average additional link prestretch is "<<pre_str_ct<< endl;
-	cout<<"Stored long link info in "<<fname<<"!\n";
+			// cout << "idx: "<<idx<<endl;
+			// cout << "idx x: "<<x_idx<<endl;
+			// cout << "idx y: "<<y_idx<<endl;
+			// cout << "center x: "<<center_x<<endl;
+			// cout << "center y: "<<center_y<<endl;
+			for (int e=0; e<n_elems; e++){
+				double cur_ini_x = R[2*edges[2*e+0]+0];
+				double cur_ini_y = R[2*edges[2*e+0]+1];
+				double cur_end_x = R[2*edges[2*e+1]+0];
+				double cur_end_y = R[2*edges[2*e+1]+1];
 
-}
-
-void Network::patterning(){
-	int x1 = 50;
-	int x2 = 150;
-	int y1 = 500;
-	int y2 = 600;
-	for (int i=0; i<n_nodes; i++){
-		if (R[i*DIM]>x1 && R[i*DIM+1]>y1 && R[i*DIM]<x2 && R[i*DIM+1]<y2){
-			// within sparsing scope
-			// int nodeX = R[i*DIM];
-			// int nodeY = R[i*DIM + 1];
-			if (i%2 == 0){
-				// just a random filter
-				for(int j=0; j<n_elems-1; j++){
-					if (edges[2*j]==i){
-						edges[2*j] = -1;
-						edges[2*j+1] = -1; 
+				double ini_cen = sqrt((cur_ini_x-center_x)*(cur_ini_x-center_x) + (cur_ini_y-center_y)*(cur_ini_y-center_y));
+				double end_cen = sqrt((cur_end_x-center_x)*(cur_end_x-center_x) + (cur_end_y-center_y)*(cur_end_y-center_y));
+				if ((ini_cen < radius) && (end_cen < radius)){
+					if (rand()%int(1/(1-rate)) == 0){// change this for rate
+						edges[2*e+0] = -1;
+						edges[2*e+1] = -1;
 					}
 				}
 			}
 
 		}
 	}
+
+
+
+	// int x1 = 50;
+	// int x2 = 150;
+	// int y1 = 500;
+	// int y2 = 600;
+	// for (int i=0; i<n_nodes; i++){
+	// 	if (R[i*DIM]>x1 && R[i*DIM+1]>y1 && R[i*DIM]<x2 && R[i*DIM+1]<y2){
+	// 		// within sparsing scope
+	// 		// int nodeX = R[i*DIM];
+	// 		// int nodeY = R[i*DIM + 1];
+	// 		if (i%2 == 0){
+	// 			// just a random filter
+	// 			for(int j=0; j<n_elems-1; j++){
+	// 				if (edges[2*j]==i){
+	// 					edges[2*j] = -1;
+	// 					edges[2*j+1] = -1; 
+	// 				}
+	// 			}
+	// 		}
+
+	// 	}
+	// }
 }
 
 
@@ -460,23 +577,13 @@ void Network::load_network(string& fname) {
 
 	// moving nodes
 	int c = 0;
-	// if (SIDE_BC){
-	// 	n_moving = n_nodes - n_tside - n_bside - n_lside - n_rside + 4;
-	// 	moving_nodes = (int*)malloc(sizeof(int)*n_moving);
-	// 	for(int i =0; i<n_nodes; i++){
-	// 		if(!ismember(i, tsideNodes, n_tside) && !ismember(i, bsideNodes, n_bside) && !ismember(i, lsideNodes, n_tside) && !ismember(i, rsideNodes, n_bside)) {
-	// 			moving_nodes[c] = i;
-	// 			c++;
-	// 		}
-	// 	}
-	// }else{
-		n_moving = n_nodes - n_tside - n_bside;
-		moving_nodes = (int*)malloc(sizeof(int)*n_moving);
-		for(int i =0; i<n_nodes; i++){
-			if(!ismember(i, tsideNodes, n_tside) && !ismember(i, bsideNodes, n_bside)){
-				moving_nodes[c] = i;
-				c++;
-			}
+	n_moving = n_nodes - n_tside - n_bside;
+	moving_nodes = (int*)malloc(sizeof(int)*n_moving);
+	for(int i =0; i<n_nodes; i++){
+		if(!ismember(i, tsideNodes, n_tside) && !ismember(i, bsideNodes, n_bside)){
+			moving_nodes[c] = i;
+			c++;
+		}
 	
 	}
 	
@@ -760,6 +867,15 @@ void Network::apply_crack(Cracklist & alist) {
 }
 
 
+
+// ----------------------------------------------------------------------- 
+/// \brief Helper function that calls gnuplot to output a png file
+///	\param png_size (string) --> the string in format "x_resolution,y_resolution" indicating the output figure size
+/// \param png_path (string) --> the location+file name
+/// \param xrange (string) --> [xmin:xmax]
+/// \param fname (string) --> png_data.txt
+/// \param pic_name (string) --> file name of png
+// -----------------------------------------------------------------------
 void pngPlotHelper(string png_size, string png_path, string xrange, string fname, string pic_name){
 	Gnuplot gnu;
 	gnu.cmd("set xrange " + xrange);
@@ -779,6 +895,16 @@ void pngPlotHelper(string png_size, string png_path, string xrange, string fname
 	gnu.reset_plot();
 }
 
+
+
+// ----------------------------------------------------------------------- 
+/// \brief Helper function that calls gnuplot to output a eps file
+///	\param png_size (string) --> the string in format "x_resolution,y_resolution" indicating the output figure size
+/// \param png_path (string) --> the location+file name
+/// \param xrange (string) --> [xmin:xmax]
+/// \param fname (string) --> eps_data.txt
+/// \param pic_name (string) --> file name of eps
+// -----------------------------------------------------------------------
 void epsPlotHelper(string eps_size, string eps_path, string xrange, string fname, string pic_name){
 	Gnuplot gnu;
 	gnu.cmd("set xrange " + xrange);
@@ -802,11 +928,11 @@ void epsPlotHelper(string eps_size, string eps_path, string xrange, string fname
 // ----------------------------------------------------------------------- 
 /// \brief Plots the graph of the network. Note the edges in the graph just
 /// signify connection between two nodes and do not represent the actual 
-/// polymer geometry in any sense. Note that this plot will be saved as .png 
+/// polymer geometry in any sense. Note that this plot will be saved as .eps 
 /// file in the folder specified by FLDR_STRING in params.h
 ///
 /// \param iter_step (int) --> The iteration number of the experiment. This
-/// number will also be the filename for the .png file
+/// number will also be the filename for the .eps file
 ///
 /// \param first_time (bool) --> This just effects what quantity is mapped
 /// to the color of the graph. If True, colors represent magnitude of forces
@@ -933,6 +1059,22 @@ void Network::plotNetwork(int iter_step, bool first_time){
 	
 }
 
+
+
+
+// ----------------------------------------------------------------------- 
+/// \brief Plots the graph of the network. Note the edges in the graph just
+/// signify connection between two nodes and do not represent the actual 
+/// polymer geometry in any sense. Note that this plot will be saved as .png 
+/// file in the folder specified by FLDR_STRING in params.h
+///
+/// \param iter_step (int) --> The iteration number of the experiment. This
+/// number will also be the filename for the .png file
+///
+/// \param first_time (bool) --> This just effects what quantity is mapped
+/// to the color of the graph. If True, colors represent magnitude of forces
+/// in the polymer else, they represent the damage in a polymer connection
+// -----------------------------------------------------------------------
 void Network::plotFrames(int iter_step, bool first_time){
 	if (PNG == 0){
 		return;
@@ -1064,6 +1206,13 @@ int Network::get_current_edges(){
 	return n_elems_current;
 }
 
+
+// ----------------------------------------------------------------------- 
+/// \brief record the number of remaining chains at this iteration in remain_chains array
+///	\param remain_chains (int*) --> An array storing number of remaining chains at each iteration
+/// \param iter (int) --> the iteration index
+/// \param curr_n_edges (int) --> the number of remaining chains at this iteration
+// -----------------------------------------------------------------------
 void Network::get_edge_number(int* remain_chains, int iter, int curr_n_edges){
 	remain_chains[iter] = curr_n_edges;
 }
@@ -1170,10 +1319,10 @@ bool Network::get_stats(){
 	// cout<<"node-node x/L max: "<<max_t<<endl;
 
 
-	// if((float)c/(float)n_elems < 0.02){
-	// 	cout<<"Too few edges remain in given mesh! Exiting...\n";
-	// 	return true;
-	// }
+	if((float)c/(float)n_elems < 0.02){
+		cout<<"Too few edges remain in given mesh! Exiting...\n";
+		return true;
+	}
 	return false;
 }
 
@@ -1197,7 +1346,7 @@ float Network::get_weight(){
 /// \brief Sets the total length of all polymer chains according to supplied
 /// weight parameter. Also prints out the new average polymer contour lengths
 /// 
-/// /param weight (float) --> Weight goal required.
+/// \param weight (float) --> Weight goal required.
 // -----------------------------------------------------------------------
 float Network::set_weight(float weight){
 	float curr_weight = get_weight();
@@ -1228,34 +1377,6 @@ void Network::move_top_plate(){
 			R[node*DIM + d] += TIME_STEP*vel[d]; 
 		}
 	}
-	// if (SIDE_BC){
-	// 	int top_first_node = tsideNodes[0];
-	// 	float cur_height = R[top_first_node*2+1];
-	// 	float total_disp = TIME_STEP*vel[1];
-	// 	float perc_disp = total_disp/cur_height;
-	// 	for(int i = 0; i<n_lside; i++){
-	// 		node = lsideNodes[i];
-	// 		// #pragma unroll
-	// 		if (R[node*2 + 1] == cur_height){
-	// 			R[node*2 + 1] += 0;
-	// 			// cout << "left: already top node" << endl;
-	// 		}else{
-	// 			R[node*2 + 1] += R[node*2 + 1]*perc_disp; 
-	// 			// cout << "left: add percentage" << endl;
-	// 		}	
-	// 	}
-	// 	for(int i = 0; i<n_rside; i++){
-	// 		node = rsideNodes[i];
-	// 		// #pragma unroll
-	// 		if (R[node*2 + 1] == cur_height){
-	// 			R[node*2 + 1] += 0;
-	// 			// cout << "right: already top node" << endl;
-	// 		}else{
-	// 			R[node*2 + 1] += R[node*2 + 1]*perc_disp;
-	// 			// cout << "right: add percentage" << endl;
-	// 		} 	
-	// 	}
-	// }
 }
 
 // ----------------------------------------------------------------------- 
@@ -1264,9 +1385,9 @@ void Network::move_top_plate(){
 /// Stops when maximum force on node is less than TOL specified in params.h
 /// or max_iter is reached
 /// 
-/// /param eta (float) --> learning rate
-/// /param alpha (float) --> history weighting parameter
-/// /param max_iter (int) --> maximum iterations to be allowed in descent
+/// \param eta (float) --> learning rate
+/// \param alpha (float) --> history weighting parameter
+/// \param max_iter (int) --> maximum iterations to be allowed in descent
 // -----------------------------------------------------------------------
 void Network::optimize(float eta, float alpha, int max_iter){
 	float* rms_history = new float[n_moving*DIM](); // () allows 0.0 initialization
@@ -1288,7 +1409,10 @@ void Network::optimize(float eta, float alpha, int max_iter){
 					R[node*DIM + d] += delR;
 					
 				}
-				// add by Dihan
+				/** add by Dihan
+				 *	these lines are used to add roller constrain (lateral displacement) on the network
+				 * 	for each interation, the x-coordinate of the node on left and right side bound will be adjust to zero or width of the network
+				 */
 				if (ROLLER && (ismember(node, lsideNodes, n_lside))) {
 					R[node*2] = 0;	
 				}
@@ -1309,10 +1433,10 @@ void Network::optimize(float eta, float alpha, int max_iter){
 // ----------------------------------------------------------------------- 
 /// \brief Writes the forces on the top plate the supplied plate_forces array
 /// 
-/// /param plate_forces (float*) --> storage array for plate_forces
-/// /param iter (int) --> force_{i} stored in plate_forces[iter*DIM + i]
+/// \param plate_forces (float*) --> storage array for plate_forces
+/// \param iter (int) --> force_{i} stored in plate_forces[iter*DIM + i]
 /// i = 0 ... DIM - 1
-/// /param max_iter (int) --> maximum iterations to be allowed in descent
+/// \param max_iter (int) --> maximum iterations to be allowed in descent
 // -----------------------------------------------------------------------
 void Network::get_plate_forces(float* plate_forces, int iter){
 	int node;
@@ -1327,6 +1451,14 @@ void Network::get_plate_forces(float* plate_forces, int iter){
 }
 
 
+// ----------------------------------------------------------------------- 
+/// \brief add by Dihan
+///	the function will update arrays that store the info about long chains, at each itration
+///	including internal forces, end node coordinate and orientation
+///	\param long_link_forces (float*) --> the array storing internal forces in each chain at this iteration
+///	\param long_link_node_pos (float*) --> the array storing end-node coordinate of each chain at this iteration
+///	\param long_link_orient (float*) --> the array storing orientation of each chain at this iteration
+// -----------------------------------------------------------------------
 void Network::get_long_link_status(float* long_link_forces, float* long_link_node_pos, float* long_link_orient, int iter){
 	int node1;
 	int node2;
@@ -1362,7 +1494,7 @@ void Network::get_long_link_status(float* long_link_forces, float* long_link_nod
 /// If <FLDR_STRING>.txt exists, <FLDR_STRING>_i.txt would be created where i
 /// is an integer decided based on copies present in current folder. 
 /// 
-/// /param iter The iteration number for the simulation
+/// \param iter (int) --> The iteration number for the simulation
 // -----------------------------------------------------------------------
 void Network::dump(int iter, bool first_time){
 	ofstream logger;
