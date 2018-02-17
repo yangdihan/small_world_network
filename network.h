@@ -56,13 +56,13 @@ public:
 	/** add by Dihan
 	 *	the function to impose additional random long chains to this network
 	 */
-	void add_long_range_egdes_random(int);
+	void add_long_range_egdes_random(int, string);
 
 	/** add by Dihan
 	 *	the function to impose additional random long chains to this network
 	 *	imposed chains only in vertical direction
 	 */
-	void add_long_range_egdes_y(int);
+	void add_long_range_egdes_y(int, string);
 
 	/** add by Dihan
 	 *	the float that represent the average stretch value among all regular chains before applying load
@@ -103,13 +103,13 @@ public:
 	/** add by Dihan
 	 *	the function will output a eps file for the configuration of the network at that iteration
 	 */
-	virtual void plotNetwork(int, bool);
+	virtual void plotNetwork(int, bool, string);
 
 	/** add by Dihan
 	 *	the function will output a png file for the configuration of the network at that iteration
 	 * 	these png files will be used to generate animation at last and will be deleted after the animation is generated
 	 */
-	virtual void plotFrames(int, bool);
+	virtual void plotFrames(int, bool, string);
 
 	virtual void clear();
 	void copy(Network const & source);

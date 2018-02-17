@@ -57,15 +57,35 @@ int main(int argc, char* argv[]) {
 	string path = argv[1];
 
 /** add by Dihan
+ *	create main folder to store everything inside
+ *	naming: meshSize_crack_longLinkNumber_prestretchValue
  *	create two folders: 
  * 	"frames" to store the .png format pictures as frames for final animation;
  *	"graphs" to store the .eps files for publication use.
  */
-	string arg1 = "mkdir ./"+std::string(FLDR_STRING)+"/graphs";
-	string arg2 = "mkdir ./"+std::string(FLDR_STRING)+"/frames";
-	system(arg1.c_str());
-	system(arg2.c_str());
+	string folder_name = "/"+to_string(int(MAXBOUND_X))+"_"+to_string(int(MAXBOUND_Y));
+	if (MESH_CRACK){
+		folder_name += "_crack";
+	}
+	if (RANDOM_LONG > 0){
+		folder_name += "_"+to_string(int(RANDOM_LONG))+"_"+to_string(PRESTRETCH);
+	}
+	if (RANDOM_Y > 0){
+		folder_name += "_"+to_string(int(RANDOM_Y))+"_v"+to_string(PRESTRETCH);
+	}
+	folder_name += "_"+to_string(int(vel_y));
+	string arg0 = "mkdir ./"+std::string(FLDR_STRING)+folder_name;
+	system(arg0.c_str());
 
+	if (EPS != 0){
+		string arg1 = "mkdir ./"+std::string(FLDR_STRING)+folder_name+"/graphs";
+		system(arg1.c_str());
+	}
+	if (PNG != 0){
+		string arg2 = "mkdir ./"+std::string(FLDR_STRING)+folder_name+"/frames";
+		system(arg2.c_str());
+	}
+	
 
 	#if SACBONDS
 	#define DECL_NET sacNetwork test_network(path)
@@ -104,18 +124,18 @@ int main(int argc, char* argv[]) {
 	 *	arrays are initialized here
 	 */
 		bool long_links = (RANDOM_LONG+RANDOM_Y > 0);
-		float* long_link_forces;
-		float* long_link_node_pos;
-		float* long_link_orient;
+		// float* long_link_forces;
+		// float* long_link_node_pos;
+		// float* long_link_orient;
 		if (long_links){
-			test_network.add_long_range_egdes_random(RANDOM_LONG);
-			test_network.add_long_range_egdes_y(RANDOM_Y);
-			long_link_forces = (float*)malloc(sizeof(float)*(RANDOM_LONG+RANDOM_Y)*STEPS);
-			memset(long_link_forces, 0.0, sizeof(float)*(RANDOM_LONG+RANDOM_Y)*STEPS);
-			long_link_node_pos = (float*)malloc(sizeof(float)*(RANDOM_LONG+RANDOM_Y)*STEPS);
-			memset(long_link_node_pos, 0.0, sizeof(float)*(RANDOM_LONG+RANDOM_Y)*STEPS);
-			long_link_orient = (float*)malloc(sizeof(float)*(RANDOM_LONG+RANDOM_Y)*STEPS);
-			memset(long_link_orient, 0.0, sizeof(float)*(RANDOM_LONG+RANDOM_Y)*STEPS);
+			test_network.add_long_range_egdes_random(RANDOM_LONG, folder_name);
+			test_network.add_long_range_egdes_y(RANDOM_Y, folder_name);
+		// 	long_link_forces = (float*)malloc(sizeof(float)*(RANDOM_LONG+RANDOM_Y)*STEPS);
+		// 	memset(long_link_forces, 0.0, sizeof(float)*(RANDOM_LONG+RANDOM_Y)*STEPS);
+		// 	long_link_node_pos = (float*)malloc(sizeof(float)*(RANDOM_LONG+RANDOM_Y)*STEPS);
+		// 	memset(long_link_node_pos, 0.0, sizeof(float)*(RANDOM_LONG+RANDOM_Y)*STEPS);
+		// 	long_link_orient = (float*)malloc(sizeof(float)*(RANDOM_LONG+RANDOM_Y)*STEPS);
+		// 	memset(long_link_orient, 0.0, sizeof(float)*(RANDOM_LONG+RANDOM_Y)*STEPS);
 		}
 
 		int old_n_edges = test_network.get_current_edges();
@@ -139,8 +159,8 @@ int main(int argc, char* argv[]) {
 	/** add by Dihan
 	 *	determine whether need to output .png and .eps files at certain frequency
 	 */
-		test_network.plotNetwork(0, true);
-		test_network.plotFrames(0, true);
+		test_network.plotNetwork(0, true, folder_name);
+		test_network.plotFrames(0, true, folder_name);
 
 		// test_network.dump(0, true);
 
@@ -182,9 +202,9 @@ int main(int argc, char* argv[]) {
 		/** add by Dihan
 		 *	update info about long_link_forces, long_link_node_pos, long_link_orient at this iteration in corresponding array
 		 */
-			if (long_links){
-				test_network.get_long_link_status(long_link_forces, long_link_node_pos, long_link_orient, i);
-			}
+			// if (long_links){
+			// 	test_network.get_long_link_status(long_link_forces, long_link_node_pos, long_link_orient, i);
+			// }
 
 			should_stop = test_network.get_stats();
 
@@ -192,19 +212,19 @@ int main(int argc, char* argv[]) {
 		 *	update number of remaining chains at this iteration in corresponding array
 		 */
 			curr_n_edges = test_network.get_current_edges();
-			test_network.get_edge_number(remain_chains, i, curr_n_edges);
+			// test_network.get_edge_number(remain_chains, i, curr_n_edges);
 
 		/** add by Dihan
 		 *	output png or eps file if should at this iteration
 		 */
 			if (PNG != 0){
 				if (i%int(PNG) == 0){
-					test_network.plotFrames(i, false);
+					test_network.plotFrames(i, false, folder_name);
 				}
 			}
 			if (EPS != 0){
 				if (i%int(EPS) == 0){
-					test_network.plotNetwork(i, false);
+					test_network.plotNetwork(i, false, folder_name);
 				}
 			}
 			
@@ -236,17 +256,17 @@ int main(int argc, char* argv[]) {
 	 *	remain_chains.txt stores the number of remaining chains at each iteration
 	 *	add_long_link_info.txt stores the info about additional long chains at each iteration
 	 */
-		string fname = std::string(FLDR_STRING) + "/" + "forces.txt";
-		string fname2 = std::string(FLDR_STRING) + "/" + "remain_chains.txt";
-		string fname3 = std::string(FLDR_STRING) + "/" + "add_long_link_info.txt";
+		string fname = std::string(FLDR_STRING)+folder_name + "/" + "forces.txt";
+		// string fname2 = std::string(FLDR_STRING) + "/" + "remain_chains.txt";
+		// string fname3 = std::string(FLDR_STRING) + "/" + "add_long_link_info.txt";
 		write_to_file<float>(fname, plate_forces, STEPS, DIM);
-		write_edge_number<int>(fname2, remain_chains, STEPS);
-		if (long_links){
-			write_long_link<float>(fname3, long_link_forces, long_link_node_pos, long_link_orient, STEPS);
-			free(long_link_forces);
-			free(long_link_node_pos);
-			free(long_link_orient);
-		}
+		// write_edge_number<int>(fname2, remain_chains, STEPS);
+		// if (long_links){
+		// 	// write_long_link<float>(fname3, long_link_forces, long_link_node_pos, long_link_orient, STEPS);
+		// 	free(long_link_forces);
+		// 	free(long_link_node_pos);
+		// 	free(long_link_orient);
+		// }
 
 	/** add by Dihan
 	 *	generate .mp4 animation from .png files in frames folder
@@ -254,13 +274,13 @@ int main(int argc, char* argv[]) {
 	 */
 		if (PNG != 0){
 			cout << "#### rendering animation ####" << endl;
-			string arg3 = "ffmpeg -f image2 -r "+std::to_string(int(20/PNG))+" -i ./"+std::string(FLDR_STRING)+"/frames/%05d.png -vcodec mpeg4 -y ./"+std::string(FLDR_STRING)+"/movie.mp4";
+			string arg3 = "ffmpeg -f image2 -r "+std::to_string(int(20/PNG))+" -i ./"+std::string(FLDR_STRING)+folder_name+"/frames/%05d.png -vcodec mpeg4 -y ./"+std::string(FLDR_STRING)+folder_name+"/movie.mp4";
 			system(arg3.c_str());
-			string arg4 = "rm ./"+std::string(FLDR_STRING)+"/frames/*.png";
+			string arg4 = "rm ./"+std::string(FLDR_STRING)+folder_name+"/frames/*.png";
 			system(arg4.c_str());
 			cout << "#### animation saved as movie.mp4 ####" << endl;
 		}
-		string arg5 = "cp plot.py ./"+std::string(FLDR_STRING)+"/";
+		string arg5 = "cp plot.py ./"+std::string(FLDR_STRING)+folder_name+"/";
 		system(arg5.c_str());
 
 
@@ -367,7 +387,7 @@ int main(int argc, char* argv[]) {
 				t = clock();  // reset clock
 				if(world_rank==0){
 					cout<<iter+1<<endl; 
-					main_network->plotNetwork(iter, false);
+					main_network->plotNetwork(iter, false, folder_name);
 					main_network->get_stats();
 				}
 			}
