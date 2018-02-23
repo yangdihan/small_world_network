@@ -280,6 +280,12 @@ void Network::add_long_range_egdes_random(int n_add, string folder_name){
 			node1 = rand()%(n_nodes - 4) + 4;
 			node2 = rand()%(n_nodes - 4) + 4;
 			s = dist(&R[node1*DIM], &R[node2*DIM]);
+			if (ismember(node1, lsideNodes, n_lside) || ismember(node1, rsideNodes, n_rside) || ismember(node1, tsideNodes, n_tside) || ismember(node1, bsideNodes, n_bside)){
+				s = 0;
+			}
+			if (ismember(node2, lsideNodes, n_lside) || ismember(node2, rsideNodes, n_rside) || ismember(node2, tsideNodes, n_tside) || ismember(node2, bsideNodes, n_bside)){
+				s = 0;
+			}
 		}
 
 		edges[n_elems*2] = node1;
@@ -287,8 +293,10 @@ void Network::add_long_range_egdes_random(int n_add, string folder_name){
 		L[n_elems] = ((1-PRESTRETCH)*s + PRESTRETCH*meanX)/meanXL;
 		pre_str_ct += s/L[n_elems];
 
+		logger<< node1 << ": " <<"\t";
 		logger<< R[node1*DIM + 0] <<"\t";
 		logger<< R[node1*DIM + 1] <<"\t";
+		logger<< node2 << ": " <<"\t";
 		logger<< R[node2*DIM + 0] <<"\t";
 		logger<< R[node2*DIM + 1] <<"\t";
 		logger<< s <<"\t";
@@ -441,20 +449,21 @@ void Network::patterning(string type, int region_number, double rate){
 		double gridX = MAXBOUND_X/(1+region_number);
 		double gridY = MAXBOUND_Y/(1+region_number);
 		double radius;
+		// 0.382 is sqaure of golden ratio
 		if (gridX > gridY){
-			radius = 0.414*gridY;
+			radius = 0.382*gridY;
 		}else{
-			radius = 0.414*gridX;
+			radius = 0.382*gridX;
 		}
 		double center_x, center_y;
 		int idx, x_idx, y_idx;
-		srand(time(NULL));
-		for (int i=0; i<region_number; i++){
-			int idx = rand()%(region_number*region_number) + 1;
-			x_idx = floor((idx-1)/region_number + 1);
-			y_idx = idx%region_number + 1;
-			center_x = x_idx*gridX;
-			center_y = y_idx*gridY;
+		// srand(time(NULL));
+		for (int i=0; i<region_number*region_number; i++){
+			// int idx = rand()%(region_number*region_number) + 1;
+			// x_idx = floor((idx-1)/region_number + 1);
+			// y_idx = idx%region_number + 1;
+			center_x = (1+i%region_number)*gridX;
+			center_y = (1+i/int(region_number))*gridY;
 
 			for (int e=0; e<n_elems; e++){
 				double cur_ini_x = R[2*edges[2*e+0]+0];
@@ -466,7 +475,7 @@ void Network::patterning(string type, int region_number, double rate){
 				double end_cen = sqrt((cur_end_x-center_x)*(cur_end_x-center_x) + (cur_end_y-center_y)*(cur_end_y-center_y));
 				if ((ini_cen < radius) && (end_cen < radius)){
 
-						L[e] *= rate;
+					L[e] *= rate;
 
 				}
 			}
@@ -568,11 +577,11 @@ void Network::copy(Network const & source) {
 	size_t sb = sizeof(bool);
 
 	R = (float*)malloc(n_nodes*DIM*sf);
-	edges = (int*)malloc(n_elems*2*si);
+	edges = (int*)malloc((RANDOM_LONG+RANDOM_Y+n_elems)*2*si);
 	forces = (float*)malloc(n_nodes*DIM*sf);
-	damage = (float*)malloc(n_elems*sf);
-	L = (float* )malloc(n_elems*sf);
-	PBC = (bool* )malloc(n_elems*sb);
+	damage = (float*)malloc((RANDOM_LONG+RANDOM_Y+n_elems)*sf);
+	L = (float* )malloc((RANDOM_LONG+RANDOM_Y+n_elems)*sf);
+	PBC = (bool* )malloc((RANDOM_LONG+RANDOM_Y+n_elems)*sb);
 	lsideNodes = (int* )malloc(n_lside*si);
 	rsideNodes = (int* )malloc(n_rside*si);
 	bsideNodes = (int* )malloc(n_bside*si);
@@ -584,7 +593,7 @@ void Network::copy(Network const & source) {
 		forces[i] = source.forces[i];
 	}
 	
-	for (int i = 0; i < n_elems * 2; i++) {
+	for (int i = 0; i < (RANDOM_LONG+RANDOM_Y+n_elems) * 2; i++) {
 		edges[i] = source.edges[i];
 	}
 	
@@ -604,7 +613,7 @@ void Network::copy(Network const & source) {
 		moving_nodes[i] = source.moving_nodes[i];
 	}
 
-	for (int i = 0; i < n_elems; i++) {
+	for (int i = 0; i < (RANDOM_LONG+RANDOM_Y+n_elems); i++) {
 		damage[i] = source.damage[i];
 		L[i] = source.L[i];
 		PBC[i] = source.PBC[i];
@@ -636,7 +645,7 @@ void Network::get_forces(bool update_damage) {
 	float force;
 
 
-	memset(forces, 0.0, n_nodes*DIM*sizeof(float));
+	memset(forces, 0.0, n_nodes*DIM*sizeof(*forces));
 
 	for (j = 0; j < n_elems; j++){
 		// read the two points that form the edge // 2 because 2 points make an edge! Duh.
@@ -687,15 +696,6 @@ void Network::get_forces(bool update_damage) {
 			forces[node2*DIM + k] += edge_force[k];
 		}
 
-		// dihan test:
-		// if (j == 50){
-		// 	cout << "x1 of "<< j << " is: "<< r1[0] << endl;
-		// 	cout << "y1 of "<< j << " is: "<< r1[1] << endl;
-		// 	cout << "x2 of "<< j << " is: "<< r2[0] << endl;
-		// 	cout << "y2 of "<< j << " is: "<< r2[1] << endl;
-		
-		// }
-
 		
 		//update damage if needed
 		if (update_damage){
@@ -711,10 +711,6 @@ void Network::get_forces(bool update_damage) {
 					cout<<"RATE_DAMAGE: Breaking bond between "
 					<<edges[j*2]<<" and "<<edges[2*j +1]<<" F, s/L = "<<force \
 					<<", "<<s/L[j]<<"s: "<<s<<", L: "<<L[j]<<endl;
-					// cout << "x1 of "<< j << " is: "<< r1[0] << endl;
-					// cout << "y1 of "<< j << " is: "<< r1[1] << endl;
-					// cout << "x2 of "<< j << " is: "<< r2[0] << endl;
-					// cout << "y2 of "<< j << " is: "<< r2[1] << endl;
 					edges[j*2] = -1; edges[j*2+1] = -1;
 				}
 			}
@@ -1363,31 +1359,38 @@ void Network::optimize(float eta, float alpha, int max_iter){
 		// cin>>p;
 
 		// problem might be caused here !!!
-		if(getabsmax(forces,n_nodes*DIM)>TOL){
+		if(getabsmax(forces,n_nodes*DIM)>TOL){	
 			for(id = 0; id < n_moving; id++){
 				node = moving_nodes[id];
+				bool left = false;
+				bool right = false;
+				if (ROLLER && (ismember(node, lsideNodes, n_lside))) {
+					left = true;	
+				}
+				if (ROLLER && (ismember(node, rsideNodes, n_rside))) {
+					right = true;	
+				}
 				#pragma unroll
 				for(d = 0; d<DIM; d++){
 
 					g = forces[DIM*node+d];
 					rms_history[id*DIM + d] = alpha*rms_history[id*DIM + d] + (1-alpha)*g*g;
 					delR = sqrt(1.0/(rms_history[id*DIM + d] + TOL))*eta*g;
-					// if (rms_history[id*DIM + d] + TOL <= 0){
-					// 	delR = sqrt(1.0/(TOL))*eta*g;
-					// }else{
-					// 	delR = sqrt(1.0/(rms_history[id*DIM + d] + TOL))*eta*g;
-					// }
 
-
-					// if (id == 250 && d == 1 && delR > 1){
-					// 	cout << "problem happen at node "<<node <<endl;
-					// 	cout << "increase in y: "<< delR <<endl;
-					// }
-					if (delR == delR){
+					if (delR == delR){ 
+						if (d==0 && left){
+							delR = -R[node*DIM + d];
+						}
+						if (d==0 && right){
+							delR = MAXBOUND_X-R[node*DIM + d];
+						}
 						R[node*DIM + d] += delR;
-					}else{
+					}else{ // nan case
+						cout <<"problem happen at node: "<<node<<endl;
+						cout <<"coordinate is: (" <<R[node*2]<<","<<R[node*2+1]<<")"<< endl;
 						// R[node*DIM + d] += sqrt(1.0/(rms_history[id*DIM + d] + 0.5*TOL))*eta*g;
-						cout << (rms_history[id*DIM + d] + TOL) << endl;
+						// cout << "g: " << g << endl;
+						// will generate problem for both crack/uncrack case
 						R[node*DIM + d] += 0;
 					}
 					
@@ -1398,12 +1401,13 @@ void Network::optimize(float eta, float alpha, int max_iter){
 				 *	these lines are used to add roller constrain (lateral displacement) on the network
 				 * 	for each interation, the x-coordinate of the node on left and right side bound will be adjust to zero or width of the network
 				 */
-				if (ROLLER && (ismember(node, lsideNodes, n_lside))) {
-					R[node*2] = 0;	
-				}
-				if (ROLLER && (ismember(node, rsideNodes, n_rside))) {
-					R[node*2] = MAXBOUND_X;	
-				}	
+				// problem actually happens here
+				// if (ROLLER && (ismember(node, lsideNodes, n_lside))) {
+				// 	R[node*2] = 0;	
+				// }
+				// if (ROLLER && (ismember(node, rsideNodes, n_rside))) {
+				// 	R[node*2] = MAXBOUND_X;	
+				// }	
 			}
 		}
 		else{

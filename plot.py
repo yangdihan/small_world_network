@@ -5,13 +5,13 @@ import numpy as np
 L_origin = 800
 TIME_STEP = 1e-2
 vel = 50.0
-long_link_switch = True
+long_link_switch = False
 #######################################
 
 fname = "forces"
-fname2 = "remain_chains"
+# fname2 = "remain_chains"
 fdir = "./"+fname+".txt"
-fdir2 = "./"+fname2+".txt"
+# fdir2 = "./"+fname2+".txt"
 if (long_link_switch):
 	fname3 = "add_long_link_info"
 	fdir3 = "./"+fname3+".txt"
@@ -64,55 +64,55 @@ stretch_u = round(stretch1[-1],5)
 stretch_max_f = round(stretch1[stress.index(maxF)],5)
 
 #zoom in at peak
-critical_index = stress.index(maxF)
-start_index = int(0.9*critical_index)
-end_index = critical_index+int(0.3*(len(stretch2)-critical_index))
-stress_d = []
-remain_d = []
-stretch_d = []
+# critical_index = stress.index(maxF)
+# start_index = int(0.9*critical_index)
+# end_index = critical_index+int(0.3*(len(stretch2)-critical_index))
+# stress_d = []
+# remain_d = []
+# stretch_d = []
 
 
 # chain remains
-L = L_origin
-for line in open(fdir2, 'r'):
-	num = int(line.split()[0])
-	if (num > 0):
-		remain.append(num)
-		L += deltaY
-		stretch2.append((L-L_origin)/L_origin)
+# L = L_origin
+# for line in open(fdir2, 'r'):
+# 	num = int(line.split()[0])
+# 	if (num > 0):
+# 		remain.append(num)
+# 		L += deltaY
+# 		stretch2.append((L-L_origin)/L_origin)
 
 
 
 
-for i in range(start_index,end_index):
-	stress_d.append(stress[i])
-	remain_d.append(remain[i])
-	stretch_d.append(stretch2[i])
+# for i in range(start_index,end_index):
+# 	stress_d.append(stress[i])
+# 	remain_d.append(remain[i])
+# 	stretch_d.append(stretch2[i])
 
 
-if (long_link_switch):
-# for long link status:
-	force_collector = []
-	stretch_collector = []
-	i = 0
-	for line in open(fdir3, 'r'):
-		list_of_words = line.split()
-		if (i==0):
-			num = int(len(list_of_words)/3)
-			for j in range(num):
-				force_collector.append([])
-				stretch_collector.append([])
-		elif (i>len(stretch1)-1):
-			break
-		else:
-			for j in range(num):
-				force_val = list_of_words[3*j]
-				if (force_val == 0):
-					break
-				else: 
-					force_collector[j].append(force_val)
-					stretch_collector[j].append(stretch1[i])
-		i += 1
+# if (long_link_switch):
+# # for long link status:
+# 	force_collector = []
+# 	stretch_collector = []
+# 	i = 0
+# 	for line in open(fdir3, 'r'):
+# 		list_of_words = line.split()
+# 		if (i==0):
+# 			num = int(len(list_of_words)/3)
+# 			for j in range(num):
+# 				force_collector.append([])
+# 				stretch_collector.append([])
+# 		elif (i>len(stretch1)-1):
+# 			break
+# 		else:
+# 			for j in range(num):
+# 				force_val = list_of_words[3*j]
+# 				if (force_val == 0):
+# 					break
+# 				else: 
+# 					force_collector[j].append(force_val)
+# 					stretch_collector[j].append(stretch1[i])
+# 		i += 1
 
 
 # plot force vs stretch
@@ -120,35 +120,37 @@ plt.figure()
 plt.xlabel("stretch")
 plt.ylabel("Force", color="b")
 plt.tick_params(axis="y", labelcolor="b")
-plt.plot(stretch1,stress,'b',label='max force is '+str(maxF))
-plt.legend(loc=4)
+# plt.plot(stretch1,stress,'b',label='max force is '+str(maxF))
+plt.plot(stretch1,stress)
+# plt.legend()
 
-plt.twinx()
-plt.ylabel("Remaining Bonds", color="r")
-plt.tick_params(axis="y", labelcolor="r")
-plt.plot(stretch2,remain,'r',label='initial force is '+str(F_initial))
-plt.legend(loc=2)
+# plt.twinx()
+# plt.ylabel("Remaining Bonds", color="r")
+# plt.tick_params(axis="y", labelcolor="r")
+# plt.plot(stretch2,remain,'r',label='initial force is '+str(F_initial))
+# plt.legend(loc=2)
 
 # if (long_link_switch):
 # 	for j in range(num):
 # 		link_name = "long link #"+str(j+1)
 # 		plt.plot(stretch_collector[j],force_collector[j],label=link_name)
 
-ant = 'energy='+str(energy)+' ; stretch final: '+str(stretch_u)
+ant = 'energy='+str(energy)+'; ultimate stretch='+str(stretch_u)
 plt.title(ant)
 plt.savefig(fout)
 
 
 # plot zoom in
-plt.figure()
-plt.xlabel("stretch")
-plt.ylabel("Force", color="b")
-plt.tick_params(axis="y", labelcolor="b")
-plt.plot(stretch_d,stress_d,'b')
-plt.twinx()
-plt.ylabel("Remaining Bonds", color="r")
-plt.tick_params(axis="y", labelcolor="r")
-plt.plot(stretch_d,remain_d,'r')
-plt.savefig(fout_peak)
+# plt.figure()
+# plt.xlabel("stretch")
+# plt.ylabel("Force", color="b")
+# plt.tick_params(axis="y", labelcolor="b")
+# plt.plot(stretch_d,stress_d,'b')
+# plt.twinx()
+# plt.ylabel("Remaining Bonds", color="r")
+# plt.tick_params(axis="y", labelcolor="r")
+# plt.plot(stretch_d,remain_d,'r')
+# plt.savefig(fout_peak)
 
-print(str(F_initial)+'\t'+str(maxF)+'\t'+str(stretch_u)+'\t'+str(stretch_max_f))
+print(str(F_initial)+'\t'+str(maxF)+'\t'+str(stretch_u)+'\t')
+	# +str(stretch_max_f))

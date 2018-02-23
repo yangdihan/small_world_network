@@ -24,7 +24,7 @@
 #define ROLLER true
 
 // int that indicates the number of random long chains imposed
-#define RANDOM_LONG 80
+#define RANDOM_LONG 120
 
 // int that indicates the number of random long chains imposed in vertical directions only
 #define RANDOM_Y 0
@@ -33,16 +33,16 @@
 #define PRESTRETCH 0.9
 
 // int that indicates the frequency of output a EPS format snapshot of the network configuration (every how many iterations)
-#define EPS 50
+#define EPS 0
 
 // int that indicates the frequency of output a PNG format snapshot of the network configuration (every how many iterations)
-#define PNG 2
+#define PNG 20
 
 // string that indicates the pattern style is "layer" or "spot". "layer" means the network is straitified by sparse and dense regions; "spot" means the there are round-shape sparse regions that distribute over the network.
 #define PATTERN_TYPE "none"
 
 // int that indicates the number of patterned regions: how many stripes for "layer" or how many round-regions for "spot".
-#define PATTERN_NUM 4
+#define PATTERN_NUM 3
 
 // float that indicates how many times sparser the patterned region will be
 #define PATTERN_RATE 2

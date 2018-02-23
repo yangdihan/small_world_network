@@ -73,7 +73,10 @@ int main(int argc, char* argv[]) {
 	if (RANDOM_Y > 0){
 		folder_name += "_"+to_string(int(RANDOM_Y))+"_v"+to_string(PRESTRETCH);
 	}
-	folder_name += "_"+to_string(int(vel_y));
+	if (std::string(PATTERN_TYPE) != "none"){
+		folder_name += "_"+std::string(PATTERN_TYPE)+"_num"+to_string(PATTERN_NUM)+"_rate"+to_string(PATTERN_RATE);
+	}
+	folder_name += "_vel_"+to_string(int(vel_y));
 	string arg0 = "mkdir ./"+std::string(FLDR_STRING)+folder_name;
 	system(arg0.c_str());
 
@@ -152,9 +155,9 @@ int main(int argc, char* argv[]) {
 	 *	store number of remaining chains in a array of int
 	 *	initialize array here
 	 */
-		int* remain_chains;
-		remain_chains = (int*)malloc(sizeof(int)*STEPS);
-		memset(remain_chains, 0, STEPS*sizeof(int));
+		// int* remain_chains;
+		// remain_chains = (int*)malloc(sizeof(int)*STEPS);
+		// memset(remain_chains, 0, STEPS*sizeof(int));
 
 	/** add by Dihan
 	 *	determine whether need to output .png and .eps files at certain frequency
@@ -285,7 +288,7 @@ int main(int argc, char* argv[]) {
 
 
 		free(plate_forces);
-		free(remain_chains);
+		// free(remain_chains);
 
 
 	}

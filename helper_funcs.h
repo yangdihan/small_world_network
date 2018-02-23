@@ -134,7 +134,12 @@ inline float kfe(float force_mag){
 
 inline bool ismember(int item, int* array,size_t size){
 	bool is_inside = false; 
-	for(int k=0; k<size; k++){if(array[k]==item){is_inside = true; break;}}
+	for(int k=0; k<size; k++){
+		if(array[k]==item){
+			is_inside = true; 
+			break;
+		}
+	}
 	return is_inside;
 }
 
