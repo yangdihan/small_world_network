@@ -5,7 +5,7 @@
 // Please refer to original Documentation file
 #define MAXBOUND_X 500.0f
 #define MAXBOUND_Y 800.0f
-#define MESH_CRACK true
+#define MESH_CRACK false
 #define TIME_STEP 1e-2
 #define SIM_TIME 20
 #define L_MEAN 150.0f
@@ -24,7 +24,7 @@
 #define ROLLER true
 
 // int that indicates the number of random long chains imposed
-#define RANDOM_LONG 120
+#define RANDOM_LONG 100
 
 // int that indicates the number of random long chains imposed in vertical directions only
 #define RANDOM_Y 0

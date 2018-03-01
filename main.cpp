@@ -101,7 +101,6 @@ int main(int argc, char* argv[]) {
  *	call the patterning function to add pattern according to pre-defined patterning condition from param.h
  */
 	test_network.patterning(PATTERN_TYPE, PATTERN_NUM, PATTERN_RATE);
-
 	if(CRACKED){
 		// Specific crack
 		Crack a;
@@ -110,6 +109,8 @@ int main(int argc, char* argv[]) {
 		test_network.apply_crack(definite_cracks);
 		cout<<__LINE__<<endl;
 	}
+
+
 
 	if (*argv[2]!='1') {
 		cout<<"Running serial version of the code: \n";
@@ -130,6 +131,8 @@ int main(int argc, char* argv[]) {
 		// float* long_link_forces;
 		// float* long_link_node_pos;
 		// float* long_link_orient;
+		int curr_n_edges = test_network.get_current_edges();
+
 		if (long_links){
 			test_network.add_long_range_egdes_random(RANDOM_LONG, folder_name);
 			test_network.add_long_range_egdes_y(RANDOM_Y, folder_name);
@@ -141,9 +144,9 @@ int main(int argc, char* argv[]) {
 		// 	memset(long_link_orient, 0.0, sizeof(float)*(RANDOM_LONG+RANDOM_Y)*STEPS);
 		}
 
-		int old_n_edges = test_network.get_current_edges();
-		int curr_n_edges = old_n_edges;
-		int total_n_edges = curr_n_edges;
+		// int old_n_edges = test_network.get_current_edges();
+		// int curr_n_edges = old_n_edges;
+		// int total_n_edges = curr_n_edges;
 
 		if(should_stop){cout<<"Simulation needs to stop!\n";return 0;}
 
@@ -215,6 +218,7 @@ int main(int argc, char* argv[]) {
 		 *	update number of remaining chains at this iteration in corresponding array
 		 */
 			curr_n_edges = test_network.get_current_edges();
+
 			// test_network.get_edge_number(remain_chains, i, curr_n_edges);
 
 		/** add by Dihan

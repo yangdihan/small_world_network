@@ -96,8 +96,12 @@ inline void unitvector(float* result, float* r1, float* r2){
 
 inline float force_wlc(float x, float L){
 	float t = x / L;
-	if (t < 0.99){ return kB*T / b_poly * (t + 1.0 / 4.0 / pow((1 - t), 2) - 1.0 / 4.0); }
-	else { return 1000; }
+	if (t < 0.99){ 
+		return kB*T / b_poly * (t + 1.0 / 4.0 / pow((1 - t), 2) - 1.0 / 4.0); 
+	}
+	else { 
+		return 1000; 
+	}
 }
 
 inline void convert_to_vector(float* result, const float mag, const float* direction){

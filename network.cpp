@@ -485,7 +485,28 @@ void Network::patterning(string type, int region_number, double rate){
 
 }
 
-
+// void Network::long_crack(float x_start, float x_end, float y_start, float y_end){
+// 	if (!MESH_CRACK){
+// 		return;
+// 	}
+// 	int c_break = 0;
+// 	for (int i=0; i<n_elems; i++){
+// 		int node1 = edges[i*2+0];
+// 		float x1 = R[node1*DIM+0];
+// 		float y1 = R[node1*DIM+1];
+// 		int node2 = edges[i*2+1];
+// 		float x2 = R[node2*DIM+0];
+// 		float y2 = R[node2*DIM+1];
+// 		float x_mid = (x1+x2)/2;
+// 		float y_mid = (y1+y2)/2;
+// 		if (y_start<y_mid && y_end>y_mid && x_start<x_mid && x_end>=x_mid){
+// 			edges[i*2+0] = -1;
+// 			edges[i*2+1] = -1;
+// 			c_break += 1;
+// 		}
+// 	}
+// 	cout << "broke "<<c_break<<" links to create a long crack."<<endl;
+// }
 
 // ----------------------------------------------------------------------- 
 /// \brief This function builds the network. It includes building PBC 
@@ -621,112 +642,6 @@ void Network::copy(Network const & source) {
 
 }
 
-
-// ----------------------------------------------------------------------- 
-/// \brief Calculates forces along edges of the polymer network graph (i.e
-/// forces in each polymer). The forces are then assigned to nodes which 
-/// prepares the network for the optimization step. If update_damage is 
-/// true, the appropriate damage metric is also updated. If damage exceeds
-/// predefined thresholds, the edge is broken. In case of a sacNetwork object
-/// hidden lengths are also opened according to damage in these hidden bonds
-/// apart from end damage. The function does not return anything as it updates
-/// the objects forces directly.
-///
-/// \param update_damage (bool) --> flag to update damage
-// -----------------------------------------------------------------------
-void Network::get_forces(bool update_damage) {
-
-	int node1, node2;
-	int j, k, id; // loop variables
-	float r1[DIM]; float r2[DIM] ;
-	float edge_force[DIM];
-	float rhat[DIM];
-	float s;
-	float force;
-
-
-	memset(forces, 0.0, n_nodes*DIM*sizeof(*forces));
-
-	for (j = 0; j < n_elems; j++){
-		// read the two points that form the edge // 2 because 2 points make an edge! Duh.
-		node1 = edges[j * 2]; 
-		node2 = edges[j * 2 + 1];
-		
-		// check if pair exists
-		if(node1 == -1 || node2 == -1) {
-			continue;
-		}
-
-		// read the positions
-		#pragma unroll
-		for(k = 0; k<DIM; k++){
-			r1[k] = R[node1*DIM + k]; 
-			r2[k] = R[node2*DIM + k];
-		}
-		
-		// check PBC_STATUS
-		if (PBC[j]) {
-			// add PBC_vector to get new node position
-			#pragma unroll
-			for (k = 0; k < DIM; k++){
-				r2[k] += PBC_vector[k];
-			}
-			// get force on node1 due to node2
-			s = dist(r1, r2);
-			unitvector(rhat, r1, r2);
-			force = force_wlc(s, L[j]);
-			if(force == 999999){edges[j*2] = -1; edges[j*2 +1] = -1; force =0.0;}
-			convert_to_vector(edge_force, force, rhat);
-			// subtract back the PBC_vector to get original node position
-			// #pragma unroll
-			// for (k = 0; k < DIM; k++){
-			// 	r2[k] -= PBC_vector[k];
-			// }
-		}
-		else{
-			s = dist(r1, r2);
-			unitvector(rhat, r1, r2);
-			force = force_wlc(s, L[j]);
-			// if(force == 999999){edges[j*2] = -1; edges[j*2 +1] = -1; force =0.0;}
-			convert_to_vector(edge_force, force, rhat);
-		}
-		#pragma unroll
-		for (k = 0; k < DIM; k++){
-			forces[node1*DIM + k] -= edge_force[k];
-			forces[node2*DIM + k] += edge_force[k];
-		}
-
-		
-		//update damage if needed
-		if (update_damage){
-			if(RATE_DAMAGE){
-				damage[j] += kfe(force)*TIME_STEP;
-
-				// cout << "break at this element: "<< 50 << endl;
-				// cout << "add force coefficient: "<<kfe(force) << endl ;
-				//remove edge ... set to special value
-				if(damage[j] > 1.0){
-					
-
-					cout<<"RATE_DAMAGE: Breaking bond between "
-					<<edges[j*2]<<" and "<<edges[2*j +1]<<" F, s/L = "<<force \
-					<<", "<<s/L[j]<<"s: "<<s<<", L: "<<L[j]<<endl;
-					edges[j*2] = -1; edges[j*2+1] = -1;
-				}
-			}
-			else{
-				damage[j] = s/L[j];
-				if(damage[j] > 0.9){
-					cout<<"Breaking bond between "
-					<<edges[j*2]<<" and "<<edges[2*j +1]<<" F, s/L = "<<force \
-					<<", "<<s/L[j]<<endl;
-					edges[j*2] = -1; edges[j*2+1] = -1;
-				}
-			}
-		}
-	}
-
-}
 
 
 // ----------------------------------------------------------------------- 
@@ -1338,6 +1253,118 @@ void Network::move_top_plate(){
 	}
 }
 
+
+// ----------------------------------------------------------------------- 
+/// \brief Calculates forces along edges of the polymer network graph (i.e
+/// forces in each polymer). The forces are then assigned to nodes which 
+/// prepares the network for the optimization step. If update_damage is 
+/// true, the appropriate damage metric is also updated. If damage exceeds
+/// predefined thresholds, the edge is broken. In case of a sacNetwork object
+/// hidden lengths are also opened according to damage in these hidden bonds
+/// apart from end damage. The function does not return anything as it updates
+/// the objects forces directly.
+///
+/// \param update_damage (bool) --> flag to update damage
+// -----------------------------------------------------------------------
+void Network::get_forces(bool update_damage) {
+	int node1, node2;
+	int j, k, id; // loop variables
+	float r1[DIM]; float r2[DIM] ;
+	float edge_force[DIM];
+	float rhat[DIM];
+	float s;
+	float force;
+
+
+	memset(forces, 0.0, n_nodes*DIM*sizeof(*forces));
+
+	for (j = 0; j < n_elems; j++){
+		// read the two points that form the edge // 2 because 2 points make an edge! Duh.
+		node1 = edges[j * 2]; 
+		node2 = edges[j * 2 + 1];
+		
+		// check if pair exists
+		if(node1 == -1 || node2 == -1) {
+			continue;
+		}
+
+		// read the positions
+		#pragma unroll
+		for(k = 0; k<DIM; k++){
+			r1[k] = R[node1*DIM + k]; 
+			r2[k] = R[node2*DIM + k];
+		}
+		
+		// check PBC_STATUS
+		if (PBC[j]) {
+			// add PBC_vector to get new node position
+			#pragma unroll
+			for (k = 0; k < DIM; k++){
+				r2[k] += PBC_vector[k];
+			}
+			// get force on node1 due to node2
+			s = dist(r1, r2);
+			unitvector(rhat, r1, r2);
+			force = force_wlc(s, L[j]);
+			if(force == 999999){edges[j*2] = -1; edges[j*2 +1] = -1; force =0.0;}
+			convert_to_vector(edge_force, force, rhat);
+			// subtract back the PBC_vector to get original node position
+			// #pragma unroll
+			// for (k = 0; k < DIM; k++){
+			// 	r2[k] -= PBC_vector[k];
+			// }
+		}
+		else{
+			s = dist(r1, r2);
+
+			/** add by Dihan
+			 *	Critical edge case:
+			 *	when two end node of one element overlap, update the force with a zero vector
+			 *	aka not processing the update part.
+			 */
+			if (s == 0){
+				return;
+			}
+
+			unitvector(rhat, r1, r2);
+			force = force_wlc(s, L[j]);
+			// if(force == 999999){edges[j*2] = -1; edges[j*2 +1] = -1; force =0.0;}
+			convert_to_vector(edge_force, force, rhat);
+		}
+
+		#pragma unroll
+		for (k = 0; k < DIM; k++){
+			forces[node1*DIM + k] -= edge_force[k];
+			forces[node2*DIM + k] += edge_force[k];
+		}
+
+		
+		//update damage if needed
+		if (update_damage){
+			if(RATE_DAMAGE){
+				damage[j] += kfe(force)*TIME_STEP;
+				if(damage[j] > 1.0){
+					cout<<"RATE_DAMAGE: Breaking bond between "
+					<<edges[j*2]<<" and "<<edges[2*j +1]<<" F, s/L = "<<force \
+					<<", "<<s/L[j]<<"s: "<<s<<", L: "<<L[j]<<endl;
+					edges[j*2] = -1; edges[j*2+1] = -1;
+				}
+			}
+			else{
+				damage[j] = s/L[j];
+				if(damage[j] > 0.9){
+					cout<<"Breaking bond between "
+					<<edges[j*2]<<" and "<<edges[2*j +1]<<" F, s/L = "<<force \
+					<<", "<<s/L[j]<<endl;
+					edges[j*2] = -1; edges[j*2+1] = -1;
+				}
+			}
+		}
+	}
+
+}
+
+
 // ----------------------------------------------------------------------- 
 /// \brief Equilibriates the Network object using RMSProp algorithm due to 
 /// G. Hinton et al (a gradient based force minimization over each node). 
@@ -1358,56 +1385,28 @@ void Network::optimize(float eta, float alpha, int max_iter){
 		// plotNetwork(step, true);
 		// cin>>p;
 
-		// problem might be caused here !!!
 		if(getabsmax(forces,n_nodes*DIM)>TOL){	
 			for(id = 0; id < n_moving; id++){
 				node = moving_nodes[id];
-				bool left = false;
-				bool right = false;
-				if (ROLLER && (ismember(node, lsideNodes, n_lside))) {
-					left = true;	
-				}
-				if (ROLLER && (ismember(node, rsideNodes, n_rside))) {
-					right = true;	
-				}
 				#pragma unroll
 				for(d = 0; d<DIM; d++){
 
 					g = forces[DIM*node+d];
 					rms_history[id*DIM + d] = alpha*rms_history[id*DIM + d] + (1-alpha)*g*g;
 					delR = sqrt(1.0/(rms_history[id*DIM + d] + TOL))*eta*g;
-
-					if (delR == delR){ 
-						if (d==0 && left){
-							delR = -R[node*DIM + d];
-						}
-						if (d==0 && right){
-							delR = MAXBOUND_X-R[node*DIM + d];
-						}
 						R[node*DIM + d] += delR;
-					}else{ // nan case
-						cout <<"problem happen at node: "<<node<<endl;
-						cout <<"coordinate is: (" <<R[node*2]<<","<<R[node*2+1]<<")"<< endl;
-						// R[node*DIM + d] += sqrt(1.0/(rms_history[id*DIM + d] + 0.5*TOL))*eta*g;
-						// cout << "g: " << g << endl;
-						// will generate problem for both crack/uncrack case
-						R[node*DIM + d] += 0;
-					}
-					
-					
 				}
 
 				/** add by Dihan
 				 *	these lines are used to add roller constrain (lateral displacement) on the network
 				 * 	for each interation, the x-coordinate of the node on left and right side bound will be adjust to zero or width of the network
 				 */
-				// problem actually happens here
-				// if (ROLLER && (ismember(node, lsideNodes, n_lside))) {
-				// 	R[node*2] = 0;	
-				// }
-				// if (ROLLER && (ismember(node, rsideNodes, n_rside))) {
-				// 	R[node*2] = MAXBOUND_X;	
-				// }	
+				if (ROLLER && (ismember(node, lsideNodes, n_lside))) {
+					R[node*2] = 0;	
+				}
+				if (ROLLER && (ismember(node, rsideNodes, n_rside))) {
+					R[node*2] = MAXBOUND_X;	
+				}	
 			}
 		}
 		else{

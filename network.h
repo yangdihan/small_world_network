@@ -122,7 +122,6 @@ public:
 	 *	rate is a float that indicates how many times sparser the patterned region will be
 	 */
 	void patterning(string type, int region_number, double rate);
-
 	bool cracked; 		///<Flag to check if the network has cracks
 	int n_nodes; 		///<Stores number of crosslinker nodes in the network
 	int n_elems; 		///<Stores number of polymer connections in the network
