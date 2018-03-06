@@ -5,7 +5,7 @@
 // Please refer to original Documentation file
 #define MAXBOUND_X 500.0f
 #define MAXBOUND_Y 800.0f
-#define MESH_CRACK false
+#define MESH_CRACK true
 #define TIME_STEP 1e-2
 #define SIM_TIME 20
 #define L_MEAN 150.0f
@@ -24,7 +24,7 @@
 #define ROLLER true
 
 // int that indicates the number of random long chains imposed
-#define RANDOM_LONG 100
+#define RANDOM_LONG 70
 
 // int that indicates the number of random long chains imposed in vertical directions only
 #define RANDOM_Y 0
@@ -36,7 +36,7 @@
 #define EPS 0
 
 // int that indicates the frequency of output a PNG format snapshot of the network configuration (every how many iterations)
-#define PNG 20
+#define PNG 2
 
 // string that indicates the pattern style is "layer" or "spot". "layer" means the network is straitified by sparse and dense regions; "spot" means the there are round-shape sparse regions that distribute over the network.
 #define PATTERN_TYPE "none"

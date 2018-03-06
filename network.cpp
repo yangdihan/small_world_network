@@ -1323,7 +1323,7 @@ void Network::get_forces(bool update_damage) {
 			 *	aka not processing the update part.
 			 */
 			if (s == 0){
-				return;
+				continue;
 			}
 
 			unitvector(rhat, r1, r2);
@@ -1394,7 +1394,7 @@ void Network::optimize(float eta, float alpha, int max_iter){
 					g = forces[DIM*node+d];
 					rms_history[id*DIM + d] = alpha*rms_history[id*DIM + d] + (1-alpha)*g*g;
 					delR = sqrt(1.0/(rms_history[id*DIM + d] + TOL))*eta*g;
-						R[node*DIM + d] += delR;
+					R[node*DIM + d] += delR;
 				}
 
 				/** add by Dihan

@@ -281,7 +281,7 @@ int main(int argc, char* argv[]) {
 	 */
 		if (PNG != 0){
 			cout << "#### rendering animation ####" << endl;
-			string arg3 = "ffmpeg -f image2 -r "+std::to_string(int(20/PNG))+" -i ./"+std::string(FLDR_STRING)+folder_name+"/frames/%05d.png -vcodec mpeg4 -y ./"+std::string(FLDR_STRING)+folder_name+"/movie.mp4";
+			string arg3 = "ffmpeg -f image2 -r "+std::to_string(int(40/PNG))+" -i ./"+std::string(FLDR_STRING)+folder_name+"/frames/%05d.png -vcodec mpeg4 -y ./"+std::string(FLDR_STRING)+folder_name+"/movie.mp4";
 			system(arg3.c_str());
 			string arg4 = "rm ./"+std::string(FLDR_STRING)+folder_name+"/frames/*.png";
 			system(arg4.c_str());

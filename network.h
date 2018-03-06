@@ -89,7 +89,7 @@ public:
 	 */
 	virtual void get_long_link_status(float* long_link_forces, float* long_link_node_pos, float* long_link_orient, int iter);
 
-	virtual void optimize(float eta = 0.1, float alpha = 0.9, int max_iter = 200);
+	virtual void optimize(float eta = 0.1, float alpha = 0.9, int max_iter = 500);
 	float get_weight();
 	float set_weight(float);
 	bool get_stats();
