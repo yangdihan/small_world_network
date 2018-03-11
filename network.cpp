@@ -1097,6 +1097,12 @@ void Network::get_edge_number(int* remain_chains, int iter, int curr_n_edges){
 /// 
 // -----------------------------------------------------------------------
 bool Network::get_stats(){
+	/** add by Dihan
+	 *	add 1 more features to this function
+	 *	calculate the overall orientation parameter
+	 *	average cos(theta)^2 for all elem (might need a helper function?)
+	 *	OP = 0.5*(3*(average of square)-1)
+	 */
 	int node1, node2;
 	int j, k, id; // loop variables
 	float r1[DIM]; float r2[DIM] ;
@@ -1407,6 +1413,13 @@ void Network::optimize(float eta, float alpha, int max_iter){
 				if (ROLLER && (ismember(node, rsideNodes, n_rside))) {
 					R[node*2] = MAXBOUND_X;	
 				}	
+
+				/** add by Dihan
+				 *	at last step, loop through all moving nodes (we just neglect bottom ones)
+				 *	calculate CC for each one (might need a helper function?)
+				 *	sum up and take average at last
+				 */
+
 			}
 		}
 		else{

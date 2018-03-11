@@ -5,30 +5,31 @@ import numpy as np
 L_origin = 800
 TIME_STEP = 1e-2
 vel = 50.0
-long_link_switch = False
+# long_link_switch = False
 #######################################
 ##
 fname = "forces"
 # fname2 = "remain_chains"
 fdir = "./"+fname+".txt"
 # fdir2 = "./"+fname2+".txt"
-if (long_link_switch):
-	fname3 = "add_long_link_info"
-	fdir3 = "./"+fname3+".txt"
+# if (long_link_switch):
+# 	fname3 = "add_long_link_info"
+# 	fdir3 = "./"+fname3+".txt"
 fout = fname+".png"
-fout_peak = fname+"peak.png"
+# fout_peak = fname+"peak.png"
 stress = []
 stretch1 = []
-remain = []
+# remain = []
 stretch2 = []
 
 
 def area(x,y):
+	# x is stretch, y is stress
 	s = 0
 	for i in range(len(y)-1):
-		if (y[i]!=y[i] or y[i+1]!=y[i+1]):
-			# check for nan
-			continue
+		# if (y[i]!=y[i] or y[i+1]!=y[i+1]):
+		# 	# check for nan
+		# 	continue
 		s += y[i]+y[i+1]
 	return 0.5*s*x[-1]/len(x)
 
@@ -37,13 +38,13 @@ deltaY = TIME_STEP*vel
 L = L_origin
 i = 0
 maxF = 0
-minF = 99999
+minF = 99999999
 maxI = 0
 for line in open(fdir, 'r'):
 	if (i>13):
 		list_of_words = line.split()
 		sigma = float(list_of_words[1])
-		if (-sigma < 9.99*10**(-5)):
+		if (-sigma < 10**(-6)):
 			break
 		else:
 			stress.append(-sigma)
@@ -61,7 +62,7 @@ energy = area(stretch1,stress)
 
 F_initial = minF
 stretch_u = round(stretch1[-1],5)
-stretch_max_f = round(stretch1[stress.index(maxF)],5)
+# stretch_max_f = round(stretch1[stress.index(maxF)],5)
 
 #zoom in at peak
 # critical_index = stress.index(maxF)
@@ -135,8 +136,8 @@ plt.plot(stretch1,stress)
 # 		link_name = "long link #"+str(j+1)
 # 		plt.plot(stretch_collector[j],force_collector[j],label=link_name)
 
-ant = 'energy='+str(energy)+'; ultimate stretch='+str(stretch_u)
-plt.title(ant)
+# ant = 'energy='+str(energy)+'; ultimate stretch='+str(stretch_u)
+# plt.title(ant)
 plt.savefig(fout)
 
 
@@ -152,5 +153,5 @@ plt.savefig(fout)
 # plt.plot(stretch_d,remain_d,'r')
 # plt.savefig(fout_peak)
 
-print(str(F_initial)+'\t'+str(maxF)+'\t'+str(stretch_u)+'\t')
+print(str(F_initial)+'\t'+str(maxF)+'\t'+str(stretch_u)+'\t'+str(energy))
 	# +str(stretch_max_f))

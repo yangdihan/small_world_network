@@ -289,8 +289,8 @@ int main(int argc, char* argv[]) {
 		}
 		string arg5 = "cp plot.py ./"+std::string(FLDR_STRING)+folder_name+"/";
 		system(arg5.c_str());
-
-
+		// string arg6 = "python3 ./"+std::string(FLDR_STRING)+folder_name+"/plot.py";
+		// system(arg6.c_str());
 		free(plate_forces);
 		// free(remain_chains);
 
