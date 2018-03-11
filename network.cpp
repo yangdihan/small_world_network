@@ -1097,12 +1097,7 @@ void Network::get_edge_number(int* remain_chains, int iter, int curr_n_edges){
 /// 
 // -----------------------------------------------------------------------
 bool Network::get_stats(){
-	/** add by Dihan
-	 *	add 1 more features to this function
-	 *	calculate the overall orientation parameter
-	 *	average cos(theta)^2 for all elem (might need a helper function?)
-	 *	OP = 0.5*(3*(average of square)-1)
-	 */
+	
 	int node1, node2;
 	int j, k, id; // loop variables
 	float r1[DIM]; float r2[DIM] ;
@@ -1117,9 +1112,13 @@ bool Network::get_stats(){
 	float shortage = 0.0;
 	int c = 0;
 
+	float sum_cos_sq = 0;
+
 	if(n_elems <= 0){
 		cout<<"Oops! Something's wrong! n_elems is not positive!"<<endl;
 	}
+
+
 	for (j = 0; j < n_elems; j++){
 		// read the two points that form the edge // 2 because 2 points make an edge! Duh.
 		node1 = edges[j * 2]; 
@@ -1140,6 +1139,22 @@ bool Network::get_stats(){
 			r2[k] = R[node2*DIM + k];
 		}
 		
+
+		/** add by Dihan
+		 *	add 1 more features to this function
+		 *	calculate the overall orientation parameter
+		 *	average cos(theta)^2 for all elem (might need a helper function?)
+		 *	OP = 0.5*(3*(average of square)-1)
+		 */
+		s = dist(r1, r2);
+		// float mod_r1 = dist(r1, origin);
+		// float mod_r2 = dist(r2, origin);
+		if (s != 0){
+			float cos = fabs((r2[1]-r1[1])/s);
+			sum_cos_sq += cos*cos;
+		}
+		
+
 		// check PBC_STATUS
 		if (PBC[j]) {
 			// add PBC_vector to get new node position
@@ -1161,7 +1176,7 @@ bool Network::get_stats(){
 			}
 		}
 		else{
-			s = dist(r1, r2);
+			// s = dist(r1, r2);
 			mean_x += s;
 			mean_t += s/L[j];
 			if(s>max_x){max_x =s;}
@@ -1178,6 +1193,7 @@ bool Network::get_stats(){
 		cout<<"No load bearing edges remain! Stopping simulation!\n";
 		return true;
 	}
+
 
 	mean_x /= c;
 	var_x /= c;
@@ -1198,6 +1214,14 @@ bool Network::get_stats(){
 	// cout<<"node-node x/L std_dev: "<<sqrt(var_t)<<endl;	
 	// cout<<"node-node x/L max: "<<max_t<<endl;
 
+	/** add by Dihan
+	 *	average cosine square
+	 *	calculate orientation parameter
+	 *	print or save to log?
+	 */
+	sum_cos_sq /= c;
+	float OP = 0.5*(3*sum_cos_sq-1);
+	cout << "orientation parameter at this step is: "<< OP << endl;
 
 	if((float)c/(float)n_elems < 0.02){
 		cout<<"Too few edges remain in given mesh! Exiting...\n";
@@ -1418,7 +1442,9 @@ void Network::optimize(float eta, float alpha, int max_iter){
 				 *	at last step, loop through all moving nodes (we just neglect bottom ones)
 				 *	calculate CC for each one (might need a helper function?)
 				 *	sum up and take average at last
+				 *	also better with a neighbor map
 				 */
+
 
 			}
 		}
