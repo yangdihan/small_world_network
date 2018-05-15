@@ -8,14 +8,15 @@ vel = 50.0
 # long_link_switch = False
 #######################################
 ##
-fname = "forces"
-# fname2 = "remain_chains"
-fdir = "./"+fname+".txt"
+fname = "./forces.txt"
+fname2 = "./remain_chains.txt"
+fname3 = "./OPs.txt"
+# fdir = "./"+fname+".txt"
 # fdir2 = "./"+fname2+".txt"
 # if (long_link_switch):
 # 	fname3 = "add_long_link_info"
 # 	fdir3 = "./"+fname3+".txt"
-fout = fname+".png"
+fout = "./figure.png"
 # fout_peak = fname+"peak.png"
 stress = []
 stretch1 = []
@@ -40,7 +41,7 @@ i = 0
 maxF = 0
 minF = 99999999
 maxI = 0
-for line in open(fdir, 'r'):
+for line in open(fname, 'r'):
 	if (i>13):
 		list_of_words = line.split()
 		sigma = float(list_of_words[1])
@@ -59,11 +60,21 @@ for line in open(fdir, 'r'):
 
 # call trapazoid quadrature
 energy = area(stretch1,stress)
-
 F_initial = minF
 stretch_u = round(stretch1[-1],5)
 # stretch_max_f = round(stretch1[stress.index(maxF)],5)
 
+n = len(stretch1)
+
+remain_chains = []
+for line in open(fname2, 'r'):
+	remain_chains.append(int(line.split()[0]))
+remain_chains = remain_chains[:n]
+
+OP = []
+for line in open(fname3, 'r'):
+	OP.append(float(line.split()[0]))
+OP = OP[:n]
 #zoom in at peak
 # critical_index = stress.index(maxF)
 # start_index = int(0.9*critical_index)
@@ -119,18 +130,27 @@ stretch_u = round(stretch1[-1],5)
 # plot force vs stretch
 plt.figure()
 plt.xlabel("stretch")
+
 plt.ylabel("Force", color="b")
 plt.tick_params(axis="y", labelcolor="b")
-# plt.plot(stretch1,stress,'b',label='max force is '+str(maxF))
-plt.plot(stretch1,stress)
-# plt.legend()
+plt.plot(stretch1,stress,label='force',color='b')
+# plt.plot(stretch1,OP,label='OP')
 
-# plt.twinx()
-# plt.ylabel("Remaining Bonds", color="r")
-# plt.tick_params(axis="y", labelcolor="r")
+
+plt.twinx()
+plt.ylabel("Remaining Bonds", color="r")
+plt.tick_params(axis="y", labelcolor="r")
+plt.plot(stretch1,remain_chains,label='# chain',color='r')
+
+plt.twinx()
+plt.ylabel("Orientation Parameter", color="g")
+plt.tick_params(axis="y", labelcolor="g")
+plt.plot(stretch1,OP,label='OP',color='g')
 # plt.plot(stretch2,remain,'r',label='initial force is '+str(F_initial))
 # plt.legend(loc=2)
 
+plt.grid()
+plt.legend()
 # if (long_link_switch):
 # 	for j in range(num):
 # 		link_name = "long link #"+str(j+1)

@@ -61,7 +61,7 @@ void read_n(int& n_nodes, int& n_elems, string& fname);
 
 void take_input(float* R, int* edges, int n_nodes, int n_elems, string& fname);
 
-void __init__(float* L, float* damage, bool* PBC, int n_elems);
+void __init__(float* L, float* damage, int* PBC, int n_elems);
 
 int filename(const string&);
 
@@ -98,6 +98,17 @@ inline float force_wlc(float x, float L){
 	float t = x / L;
 	if (t < 0.99){ 
 		return kB*T / b_poly * (t + 1.0 / 4.0 / pow((1 - t), 2) - 1.0 / 4.0); 
+	}
+	else { 
+		return 1000; 
+	}
+}
+
+// add by Dihan, another way to try patterning
+inline float force_wlc2(float x, float L, double rate){
+	float t = x / L;
+	if (t < 0.99){ 
+		return kB*T / (rate*b_poly) * (t + 1.0 / 4.0 / pow((1 - t), 2) - 1.0 / 4.0); 
 	}
 	else { 
 		return 1000; 
@@ -186,7 +197,7 @@ void write_to_file(string& fname, t* arr, int rows, int cols){
 }
 
 template <typename t>
-void write_edge_number(string& fname2, t* remain_chains, int row){
+void write_to_file2(string& fname2, t* remain_chains, int row){
 	ofstream logger;
 
 	logger.open(fname2, ios::trunc|ios_base::out);
@@ -196,7 +207,7 @@ void write_edge_number(string& fname2, t* remain_chains, int row){
 		// logger<<"\n";
 	}
     logger.close();
-	cout<<"finish store edge numbers "<<fname2<<"!\n";
+	cout<<"finish store "<<fname2<<"!\n";
 }
 
 template <typename t>
@@ -228,6 +239,6 @@ inline float kf(float force){
 	return af*expf(force*delxf/kB/T);
 }
 
-void __init__(float* L, int* m, float* damage, float* sacdamage, bool* PBC, int n_elems);
+void __init__(float* L, int* m, float* damage, float* sacdamage, int* PBC, int n_elems);
 
 #endif

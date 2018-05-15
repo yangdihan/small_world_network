@@ -106,7 +106,7 @@ void sacNetwork::get_forces(bool update_damage = false) {
 		}
 		
 		// check PBC_STATUS
-		if (PBC[j]) {
+		if (PBC[j]==1) {
 			// add PBC_vector to get new node position
 			#pragma unroll
 			for (k = 0; k < DIM; k++){

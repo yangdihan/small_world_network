@@ -77,6 +77,7 @@ int main(int argc, char* argv[]) {
 		folder_name += "_"+std::string(PATTERN_TYPE)+"_num"+to_string(PATTERN_NUM)+"_rate"+to_string(PATTERN_RATE);
 	}
 	folder_name += "_vel_"+to_string(int(vel_y));
+	folder_name += to_string(int(L_MEAN));
 	string arg0 = "mkdir ./"+std::string(FLDR_STRING)+folder_name;
 	system(arg0.c_str());
 
@@ -120,22 +121,45 @@ int main(int argc, char* argv[]) {
 		if (weight<WEIGHT_GOAL){
 			weight_multiplier = test_network.set_weight(WEIGHT_GOAL);
 		}
-		bool should_stop = test_network.get_stats();
-		
-	/** add by Dihan 
-	 *	call functions to add random long links to the network when RANDOM_LONG or RANDOM_Y is not zero
-	 *	store info for long links including internal forces, node position and orientation in three array
-	 *	arrays are initialized here
-	 */
+
+		float* plate_forces;
+		plate_forces = (float*)malloc(sizeof(float)*DIM*STEPS);
+		memset(plate_forces, 0.0, STEPS*DIM*sizeof(float));
+
+		/** add by Dihan
+		 *	store number of remaining chains and orientation params
+		 *	initialize 2 array here
+		 */
+		float* OPs;
+		OPs = (float*)malloc(sizeof(float)*STEPS);
+		memset(OPs, 0.0, sizeof(float)*STEPS);
+
+		int* num_chains;
+		num_chains = (int*)malloc(sizeof(int)*STEPS);
+		memset(num_chains, 0.0, sizeof(int)*STEPS);
+
+		bool should_stop = test_network.get_stats(OPs,num_chains,0);
+		if(should_stop){cout<<"Simulation needs to stop!\n";return 0;}
+
+
+		/** add by Dihan 
+		 *	call functions to add random long links to the network when RANDOM_LONG or RANDOM_Y is not zero
+		 *	store info for long links including internal forces, node position and orientation in three array
+		 *	arrays are initialized here
+		 */
 		bool long_links = (RANDOM_LONG+RANDOM_Y > 0);
 		// float* long_link_forces;
 		// float* long_link_node_pos;
 		// float* long_link_orient;
-		int curr_n_edges = test_network.get_current_edges();
+		// int curr_n_edges = test_network.get_current_edges();
 
 		if (long_links){
-			test_network.add_long_range_egdes_random(RANDOM_LONG, folder_name);
-			test_network.add_long_range_egdes_y(RANDOM_Y, folder_name);
+			if (GHOST){
+				test_network.add_long_range_egdes_ghost(RANDOM_LONG, folder_name);
+			}else{
+				test_network.add_long_range_egdes_random(RANDOM_LONG, folder_name);
+				test_network.add_long_range_egdes_y(RANDOM_Y, folder_name);
+			}
 		// 	long_link_forces = (float*)malloc(sizeof(float)*(RANDOM_LONG+RANDOM_Y)*STEPS);
 		// 	memset(long_link_forces, 0.0, sizeof(float)*(RANDOM_LONG+RANDOM_Y)*STEPS);
 		// 	long_link_node_pos = (float*)malloc(sizeof(float)*(RANDOM_LONG+RANDOM_Y)*STEPS);
@@ -143,25 +167,13 @@ int main(int argc, char* argv[]) {
 		// 	long_link_orient = (float*)malloc(sizeof(float)*(RANDOM_LONG+RANDOM_Y)*STEPS);
 		// 	memset(long_link_orient, 0.0, sizeof(float)*(RANDOM_LONG+RANDOM_Y)*STEPS);
 		}
+		
 
-		// int old_n_edges = test_network.get_current_edges();
-		// int curr_n_edges = old_n_edges;
-		// int total_n_edges = curr_n_edges;
+		//test cluster coefficient
+		double cc = test_network.find_clustering(704);
+		// cout << "cluster coefficient at t=0: "<< cc << endl;
 
-		if(should_stop){cout<<"Simulation needs to stop!\n";return 0;}
-
-		float* plate_forces;
-		plate_forces = (float*)malloc(sizeof(float)*DIM*STEPS);
-		memset(plate_forces, 0.0, STEPS*DIM*sizeof(float));
-
-	/** add by Dihan
-	 *	store number of remaining chains in a array of int
-	 *	initialize array here
-	 */
-		// int* remain_chains;
-		// remain_chains = (int*)malloc(sizeof(int)*STEPS);
-		// memset(remain_chains, 0, STEPS*sizeof(int));
-
+		
 	/** add by Dihan
 	 *	determine whether need to output .png and .eps files at certain frequency
 	 */
@@ -188,6 +200,7 @@ int main(int argc, char* argv[]) {
 		double plate_force_min;
 
 		for(int i = 1; i<STEPS; i++ ){
+			// cout << i << endl;
 			// The "optimize-move_top_plate-get_plate_forces" do all the work
 			test_network.optimize();
 			test_network.get_plate_forces(plate_forces, i);
@@ -195,15 +208,16 @@ int main(int argc, char* argv[]) {
 		/** add by Dihan
 		 *	if force start to increase, we should move top plate
 		 */
-			plate_force_new = -plate_forces[DIM*i + 1];
-			if (i == 1 || plate_force_new < plate_force_min){
-				plate_force_min = plate_force_new;
-			}else{
-				should_move = true;
-			}
-			if (should_move){
+			// plate_force_new = -plate_forces[DIM*i + 1];
+			// if (i == 1 || plate_force_new < plate_force_min){
+			// 	plate_force_min = plate_force_new;
+			// }else{
+			// 	should_move = true;
+			// }
+			// if (should_move){
+			// 	cout << "move" << endl;
 				test_network.move_top_plate();
-			}
+			// }
 
 		/** add by Dihan
 		 *	update info about long_link_forces, long_link_node_pos, long_link_orient at this iteration in corresponding array
@@ -212,12 +226,12 @@ int main(int argc, char* argv[]) {
 			// 	test_network.get_long_link_status(long_link_forces, long_link_node_pos, long_link_orient, i);
 			// }
 
-			should_stop = test_network.get_stats();
+			should_stop = test_network.get_stats(OPs,num_chains,i);
 
 		/** add by Dihan
 		 *	update number of remaining chains at this iteration in corresponding array
 		 */
-			curr_n_edges = test_network.get_current_edges();
+			// curr_n_edges = test_network.get_current_edges();
 
 			// test_network.get_edge_number(remain_chains, i, curr_n_edges);
 
@@ -252,7 +266,7 @@ int main(int argc, char* argv[]) {
 			// 	cout<<"Seems like very few edges remain! \n";
 			// 	break;
 			// }
-			cout<<"Step "<<(i+1)<<" took "<<float(clock()-t)/CLOCKS_PER_SEC<<" s\n";
+			// cout<<"Step "<<(i+1)<<" took "<<float(clock()-t)/CLOCKS_PER_SEC<<" s\n";
 			t = clock();
 
 		}
@@ -263,10 +277,13 @@ int main(int argc, char* argv[]) {
 	 *	remain_chains.txt stores the number of remaining chains at each iteration
 	 *	add_long_link_info.txt stores the info about additional long chains at each iteration
 	 */
-		string fname = std::string(FLDR_STRING)+folder_name + "/" + "forces.txt";
-		// string fname2 = std::string(FLDR_STRING) + "/" + "remain_chains.txt";
+		string fname_forces = std::string(FLDR_STRING)+folder_name + "/" + "forces.txt";
+		string fname_OP = std::string(FLDR_STRING) +folder_name+ "/" + "OPs.txt";
+		string fname_chains = std::string(FLDR_STRING) +folder_name+ "/" + "remain_chains.txt";
 		// string fname3 = std::string(FLDR_STRING) + "/" + "add_long_link_info.txt";
-		write_to_file<float>(fname, plate_forces, STEPS, DIM);
+		write_to_file<float>(fname_forces, plate_forces, STEPS, DIM);
+		write_to_file2<float>(fname_OP, OPs, STEPS);
+		write_to_file2<int>(fname_chains, num_chains, STEPS);
 		// write_edge_number<int>(fname2, remain_chains, STEPS);
 		// if (long_links){
 		// 	// write_long_link<float>(fname3, long_link_forces, long_link_node_pos, long_link_orient, STEPS);
@@ -284,7 +301,7 @@ int main(int argc, char* argv[]) {
 			string arg3 = "ffmpeg -f image2 -r "+std::to_string(int(40/PNG))+" -i ./"+std::string(FLDR_STRING)+folder_name+"/frames/%05d.png -vcodec mpeg4 -y ./"+std::string(FLDR_STRING)+folder_name+"/movie.mp4";
 			system(arg3.c_str());
 			string arg4 = "rm ./"+std::string(FLDR_STRING)+folder_name+"/frames/*.png";
-			system(arg4.c_str());
+			// system(arg4.c_str());
 			cout << "#### animation saved as movie.mp4 ####" << endl;
 		}
 		string arg5 = "cp plot.py ./"+std::string(FLDR_STRING)+folder_name+"/";
@@ -292,176 +309,177 @@ int main(int argc, char* argv[]) {
 		// string arg6 = "python3 ./"+std::string(FLDR_STRING)+folder_name+"/plot.py";
 		// system(arg6.c_str());
 		free(plate_forces);
-		// free(remain_chains);
+		free(OPs);
+		free(num_chains);
 
 
 	}
 	else {
 
-		// Settle in! This code is murky af
-		cout<<"Running MPI version of the code: "<<endl;
-		MPI_Init(NULL, NULL);
+		// // Settle in! This code is murky af
+		// cout<<"Running MPI version of the code: "<<endl;
+		// MPI_Init(NULL, NULL);
 		
-		// Get the number of processes
-	  	int world_size;
-	  	MPI_Comm_size(MPI_COMM_WORLD, &world_size);
-	  	// Get the rank of the process
-	  	int world_rank;
-	  	MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+		// // Get the number of processes
+	 //  	int world_size;
+	 //  	MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+	 //  	// Get the rank of the process
+	 //  	int world_rank;
+	 //  	MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
 
-	  	MPI_Network * main_network = new MPI_Network(test_network);
+	 //  	MPI_Network * main_network = new MPI_Network(test_network);
 		
-	  	float* plate_forces = NULL;
+	 //  	float* plate_forces = NULL;
 
   
 		
-		bool should_stop = main_network->get_stats();
-		if(main_network->get_weight()==0){
-			cout<<"Problem with MPI constructor! Reading 0 weight! Exiting"<<endl;
-			MPI_Finalize();
-			return 0;
-		}
+		// bool should_stop = main_network->get_stats(OPs,num_chains,i);
+		// if(main_network->get_weight()==0){
+		// 	cout<<"Problem with MPI constructor! Reading 0 weight! Exiting"<<endl;
+		// 	MPI_Finalize();
+		// 	return 0;
+		// }
 
-		if(should_stop || world_size % 2 == 1) {
-			//Always take even number of processors
-			cout<<"Got stop signal! stop flag: \t"<<should_stop<<\
-				"world_size: "<<world_size<<endl;
-			MPI_Finalize();
-			return 0;
-		}
+		// if(should_stop || world_size % 2 == 1) {
+		// 	//Always take even number of processors
+		// 	cout<<"Got stop signal! stop flag: \t"<<should_stop<<\
+		// 		"world_size: "<<world_size<<endl;
+		// 	MPI_Finalize();
+		// 	return 0;
+		// }
 	    
-	    // world_rank 0 handles forces and R sync
-		if (world_rank == 0) {
-			plate_forces = (float*)malloc(sizeof(float)*DIM*STEPS/NSYNC);
-			memset(plate_forces, 0, STEPS/NSYNC*DIM*sizeof(float));
-		}
+	 //    // world_rank 0 handles forces and R sync
+		// if (world_rank == 0) {
+		// 	plate_forces = (float*)malloc(sizeof(float)*DIM*STEPS/NSYNC);
+		// 	memset(plate_forces, 0, STEPS/NSYNC*DIM*sizeof(float));
+		// }
 		
-		// cout<<"world rank:  "<<world_rank<<main_network->n_elems<<endl;
-		MPI_Barrier(MPI_COMM_WORLD);
-		main_network->init_MPI(world_rank, world_size);
+		// // cout<<"world rank:  "<<world_rank<<main_network->n_elems<<endl;
+		// MPI_Barrier(MPI_COMM_WORLD);
+		// main_network->init_MPI(world_rank, world_size);
 
-		cout<<__LINE__<<endl;
-		MPI_Bcast(main_network->L, main_network->n_elems, MPI_FLOAT, 0, MPI_COMM_WORLD);
-		MPI_Bcast(main_network->PBC, main_network->n_elems, MPI_C_BOOL, 0, MPI_COMM_WORLD); 
+		// cout<<__LINE__<<endl;
+		// MPI_Bcast(main_network->L, main_network->n_elems, MPI_FLOAT, 0, MPI_COMM_WORLD);
+		// MPI_Bcast(main_network->PBC, main_network->n_elems, MPI_C_BOOL, 0, MPI_COMM_WORLD); 
 
-		size_t r_size = main_network->n_nodes * DIM * world_size;
-		float * R_buffer; 
-		R_buffer = (float*)malloc(r_size*sizeof(float));//buffer to gather the R from all nodes
+		// size_t r_size = main_network->n_nodes * DIM * world_size;
+		// float * R_buffer; 
+		// R_buffer = (float*)malloc(r_size*sizeof(float));//buffer to gather the R from all nodes
 		
-		float * forces_buffer; 
-		forces_buffer = (float*)malloc(r_size*sizeof(float));//buffer to gather the forces from all nodes
-		// Force buffer needed to calculate plate_forces
+		// float * forces_buffer; 
+		// forces_buffer = (float*)malloc(r_size*sizeof(float));//buffer to gather the forces from all nodes
+		// // Force buffer needed to calculate plate_forces
 		
-		int * chunk_nodes_buffer = new int[main_network->chunk_nodes_len*world_size];
-		cout<<"world rank: "<<world_rank<< " chunk len = "<<main_network->chunk_nodes_len<<endl;
+		// int * chunk_nodes_buffer = new int[main_network->chunk_nodes_len*world_size];
+		// cout<<"world rank: "<<world_rank<< " chunk len = "<<main_network->chunk_nodes_len<<endl;
 				
-		MPI_Gather(main_network->chunk_nodes, main_network->chunk_nodes_len, MPI_INT, chunk_nodes_buffer, main_network->chunk_nodes_len, MPI_INT, 0, MPI_COMM_WORLD);
+		// MPI_Gather(main_network->chunk_nodes, main_network->chunk_nodes_len, MPI_INT, chunk_nodes_buffer, main_network->chunk_nodes_len, MPI_INT, 0, MPI_COMM_WORLD);
 
-		// Uniqueness of partition check
-		if (world_rank == 0) {
-			int chunk_sum = 0;
-			for (int i = 0; i < main_network->chunk_nodes_len * world_size; i++) {
-				if (chunk_nodes_buffer[i] != -1) {
-					chunk_sum += chunk_nodes_buffer[i];
-				}
-			}
+		// // Uniqueness of partition check
+		// if (world_rank == 0) {
+		// 	int chunk_sum = 0;
+		// 	for (int i = 0; i < main_network->chunk_nodes_len * world_size; i++) {
+		// 		if (chunk_nodes_buffer[i] != -1) {
+		// 			chunk_sum += chunk_nodes_buffer[i];
+		// 		}
+		// 	}
 			
-			int nn = main_network->n_nodes;
-			int id;
-			for(int d = 0 ; d<main_network->chunk_edges_len; d++){
-				id = main_network->chunk_edges[d];
-				if(id!=-1){
-					if(main_network->edges[2*id] >= nn || main_network->edges[2*id + 1] >= nn){
-								cout<<"Node is "<<main_network->edges[2*id]<<" for index "<<id<<endl;
-					}	
-				}
-			}
-			if (chunk_sum != (nn*nn - nn)/2 ) {
-				cout << chunk_sum << " | "<< (nn*nn - nn)/2<<endl; 
-				cout << "Uneven chunk partitioning" << endl;
+		// 	int nn = main_network->n_nodes;
+		// 	int id;
+		// 	for(int d = 0 ; d<main_network->chunk_edges_len; d++){
+		// 		id = main_network->chunk_edges[d];
+		// 		if(id!=-1){
+		// 			if(main_network->edges[2*id] >= nn || main_network->edges[2*id + 1] >= nn){
+		// 						cout<<"Node is "<<main_network->edges[2*id]<<" for index "<<id<<endl;
+		// 			}	
+		// 		}
+		// 	}
+		// 	if (chunk_sum != (nn*nn - nn)/2 ) {
+		// 		cout << chunk_sum << " | "<< (nn*nn - nn)/2<<endl; 
+		// 		cout << "Uneven chunk partitioning" << endl;
 
-			}
-		}
+		// 	}
+		// }
 		
-		cout << "World rank proc "<<world_rank << " starting the loop:" << endl;
+		// cout << "World rank proc "<<world_rank << " starting the loop:" << endl;
 
-		int iter = 0; // needed to write forces later
+		// int iter = 0; // needed to write forces later
 
-		clock_t t = clock(); 
-		for(iter = 0; iter<STEPS; iter++){
-			if((iter+1)%100 == 0){
-				cout<<"That took "<<(clock()-t)/CLOCKS_PER_SEC<<" s\n";
-				t = clock();  // reset clock
-				if(world_rank==0){
-					cout<<iter+1<<endl; 
-					main_network->plotNetwork(iter, false, folder_name);
-					main_network->get_stats();
-				}
-			}
-			main_network->optimize();
-			MPI_Barrier(MPI_COMM_WORLD);
+		// clock_t t = clock(); 
+		// for(iter = 0; iter<STEPS; iter++){
+		// 	if((iter+1)%100 == 0){
+		// 		cout<<"That took "<<(clock()-t)/CLOCKS_PER_SEC<<" s\n";
+		// 		t = clock();  // reset clock
+		// 		if(world_rank==0){
+		// 			cout<<iter+1<<endl; 
+		// 			main_network->plotNetwork(iter, false, folder_name);
+		// 			main_network->get_stats(OPs,num_chains,i);
+		// 		}
+		// 	}
+		// 	main_network->optimize();
+		// 	MPI_Barrier(MPI_COMM_WORLD);
 
 
-			MPI_Gather(main_network->R, main_network->n_nodes * DIM, MPI_FLOAT, R_buffer, main_network->n_nodes * DIM, MPI_FLOAT, 0, MPI_COMM_WORLD);
+		// 	MPI_Gather(main_network->R, main_network->n_nodes * DIM, MPI_FLOAT, R_buffer, main_network->n_nodes * DIM, MPI_FLOAT, 0, MPI_COMM_WORLD);
 
-			if((iter+1)%NSYNC == 0){
-				MPI_Gather(main_network->forces, main_network->n_nodes * DIM, MPI_FLOAT, forces_buffer, main_network->n_nodes * DIM, MPI_FLOAT, 0, MPI_COMM_WORLD);
-			}
+		// 	if((iter+1)%NSYNC == 0){
+		// 		MPI_Gather(main_network->forces, main_network->n_nodes * DIM, MPI_FLOAT, forces_buffer, main_network->n_nodes * DIM, MPI_FLOAT, 0, MPI_COMM_WORLD);
+		// 	}
 
-			// syncing R and forces
-			if (world_rank == 0) {
-				int node_to_sync  = 0;
-				for (int i = 0; i < world_size; i += 1) {
-					for (int j = i*main_network->chunk_nodes_len; j < (i+1)*main_network->chunk_nodes_len; j++) {
-						node_to_sync = chunk_nodes_buffer[j];
-						if (node_to_sync == -1) {
-							break;
-						}
-						else{
-							main_network->R[DIM * node_to_sync] = R_buffer[main_network->n_nodes * DIM * i + DIM * node_to_sync];
-							main_network->R[DIM * node_to_sync + 1] = R_buffer[main_network->n_nodes * DIM * i + DIM * node_to_sync + 1];
-							if((iter+1)%NSYNC == 0){
-								main_network->forces[DIM * node_to_sync] = forces_buffer[main_network->n_nodes * DIM * i + DIM * node_to_sync];
-								main_network->forces[DIM * node_to_sync + 1] = forces_buffer[main_network->n_nodes * DIM * i + DIM * node_to_sync + 1];
-							}
-						}
-					}
+		// 	// syncing R and forces
+		// 	if (world_rank == 0) {
+		// 		int node_to_sync  = 0;
+		// 		for (int i = 0; i < world_size; i += 1) {
+		// 			for (int j = i*main_network->chunk_nodes_len; j < (i+1)*main_network->chunk_nodes_len; j++) {
+		// 				node_to_sync = chunk_nodes_buffer[j];
+		// 				if (node_to_sync == -1) {
+		// 					break;
+		// 				}
+		// 				else{
+		// 					main_network->R[DIM * node_to_sync] = R_buffer[main_network->n_nodes * DIM * i + DIM * node_to_sync];
+		// 					main_network->R[DIM * node_to_sync + 1] = R_buffer[main_network->n_nodes * DIM * i + DIM * node_to_sync + 1];
+		// 					if((iter+1)%NSYNC == 0){
+		// 						main_network->forces[DIM * node_to_sync] = forces_buffer[main_network->n_nodes * DIM * i + DIM * node_to_sync];
+		// 						main_network->forces[DIM * node_to_sync + 1] = forces_buffer[main_network->n_nodes * DIM * i + DIM * node_to_sync + 1];
+		// 					}
+		// 				}
+		// 			}
 					
-				}
-				if((iter+1)%NSYNC == 0){
-					cout << "Synced forces" << endl;
-					main_network->get_plate_forces(plate_forces, iter/NSYNC);
-				}
-				main_network->move_top_plate();
-			}
+		// 		}
+		// 		if((iter+1)%NSYNC == 0){
+		// 			cout << "Synced forces" << endl;
+		// 			main_network->get_plate_forces(plate_forces, iter/NSYNC);
+		// 		}
+		// 		main_network->move_top_plate();
+		// 	}
 
-			MPI_Bcast(main_network->R, main_network->n_nodes * DIM, MPI_FLOAT, 0, MPI_COMM_WORLD);
+		// 	MPI_Bcast(main_network->R, main_network->n_nodes * DIM, MPI_FLOAT, 0, MPI_COMM_WORLD);
 			
-			//Barrier required as Bcast is not synchronous and does not block other processes from continuing
-			MPI_Barrier(MPI_COMM_WORLD);
+		// 	//Barrier required as Bcast is not synchronous and does not block other processes from continuing
+		// 	MPI_Barrier(MPI_COMM_WORLD);
 
-		} // the simulation loop ends here
+		// } // the simulation loop ends here
 
 
-		if (world_rank == 0) {
-			string sb = SACBONDS ? "true" : "false" ; 
-			string fname = FLDR_STRING + std::to_string(L_STD/L_MEAN) + "_" + sb + ".txt";
-			write_to_file<float>(fname, plate_forces, STEPS, DIM);
-			free(plate_forces);
-			plate_forces = NULL;
-		}
+		// if (world_rank == 0) {
+		// 	string sb = SACBONDS ? "true" : "false" ; 
+		// 	string fname = FLDR_STRING + std::to_string(L_STD/L_MEAN) + "_" + sb + ".txt";
+		// 	write_to_file<float>(fname, plate_forces, STEPS, DIM);
+		// 	free(plate_forces);
+		// 	plate_forces = NULL;
+		// }
 		
-		//Needed to not have double free, corruption error
-		delete[] R_buffer;
-		R_buffer = NULL;
-		delete[] forces_buffer;
-		forces_buffer = NULL;
-		delete[] chunk_nodes_buffer;
-		chunk_nodes_buffer = NULL;
-		delete main_network;
-		main_network = NULL;
-		cout << "Made it to the end! Exiting now." << endl;
-		MPI_Finalize();
+		// //Needed to not have double free, corruption error
+		// delete[] R_buffer;
+		// R_buffer = NULL;
+		// delete[] forces_buffer;
+		// forces_buffer = NULL;
+		// delete[] chunk_nodes_buffer;
+		// chunk_nodes_buffer = NULL;
+		// delete main_network;
+		// main_network = NULL;
+		// cout << "Made it to the end! Exiting now." << endl;
+		// MPI_Finalize();
 
 	}
 

@@ -1,16 +1,28 @@
 #ifndef __params__
 #define __params__
-
+// ssh dyang42@cc-login.campuscluster.illinois.edu
+// PATH=/home/dyang42/scratch/MPICH/mpich-install/bin/:$PATH
+// export PATH
+// module load intel/17.0 
+// module load gcc/6.2.0 
+// module load mvapich2/2.2-intel-17.0
+// qsub -l walltime=03:00:00,nodes=2:ppn=2 serial.pbs 
+// qsub -l walltime=00:30:00,nodes=2:ppn=2 serial.pbs 
+// qstat -u dyang42
 // FREQUENTLY USED
 // Please refer to original Documentation file
+// 1. PBC for long chains, give up mirror case
+// 2. figure out nonlinearity for both overall network and single chain
+// 3. sigma = E*eps
+// 4. RATE_DAMAGE = true
 #define MAXBOUND_X 500.0f
 #define MAXBOUND_Y 800.0f
-#define MESH_CRACK true
+#define MESH_CRACK false
 #define TIME_STEP 1e-2
-#define SIM_TIME 20
-#define L_MEAN 150.0f
-#define L_STD 25.0f
-#define FLDR_STRING "results"
+#define SIM_TIME 40
+#define L_MEAN 50.0f
+#define L_STD 5.0f
+#define FLDR_STRING "playground"
 
 // add by Dihan:
 // I moved the defination of parameters vel_x & vel_y from the separate vel.h file here.
@@ -21,16 +33,19 @@
 #define WEIGHT_GOAL 1.0e6
 
 // bool that makes left and right boundary of the network constrained in lateral displacement
-#define ROLLER true
+#define ROLLER false
+
+// bool that makes nodes too close to top/bottom the ghost nodes.
+#define GHOST true
 
 // int that indicates the number of random long chains imposed
-#define RANDOM_LONG 70
+#define RANDOM_LONG 50
 
 // int that indicates the number of random long chains imposed in vertical directions only
 #define RANDOM_Y 0
 
 // float that indicates the "prestretch rate". I defined "prestretch rate" as a parameter to describe the extent of prestretch in addtional chains that 0 means the prestetch is same as the original short chains; 1 means the contour length is same as the original short chains.
-#define PRESTRETCH 0.9
+#define PRESTRETCH 0.5
 
 // int that indicates the frequency of output a EPS format snapshot of the network configuration (every how many iterations)
 #define EPS 0
@@ -47,6 +62,12 @@
 // float that indicates how many times sparser the patterned region will be
 #define PATTERN_RATE 2
 
+// PBC
+#define IMPLEMENT_PBC true
+
+// Breaking Criteria
+#define RATE_DAMAGE true
+
 // other constant definations:
 #define PI 3.141592653
 #define DIM 2
@@ -55,10 +76,7 @@
 #define PAD_X MAXBOUND_X*1.03
 #define PAD_Y MAXBOUND_Y*1.03
 #define SACBONDS false
-#define IMPLEMENT_PBC false
 #define CRACKED false
-#define RATE_DAMAGE true
-
 
 #if CRACKED
 #define PROB_REMOVAL 1.0

@@ -235,7 +235,7 @@ void take_input(float* R, int* edges, int n_nodes, int n_elems, string& fname) {
 /// \brief Initializes various properties for each edge in the graph
 ///
 // -----------------------------------------------------------------------
-void __init__(float* L, float* damage, bool* PBC, int n_elems){
+void __init__(float* L, float* damage, int* PBC, int n_elems){
 	std::default_random_engine seed;
 	std::uniform_real_distribution<float> generator(L_MEAN - L_STD, L_MEAN + L_STD);
 	// std::normal_distribution<float> generator(L_MEAN, L_STD);
@@ -243,7 +243,7 @@ void __init__(float* L, float* damage, bool* PBC, int n_elems){
 	for(int i=0; i<n_elems; i++){
 		L[i] = generator(seed);
 		damage[i] = 0.0;
-		PBC[i] = false;
+		PBC[i] = 0;
 	}	
 }
 
@@ -280,7 +280,7 @@ float getabsmax(float* arr, size_t sizeofarr){
 /// \brief Overrides __init__ for sacNetworks.
 ///
 // -----------------------------------------------------------------------
-void __init__(float* L, int* m, float* damage, float* sacdamage, bool* PBC, int n_elems){
+void __init__(float* L, int* m, float* damage, float* sacdamage, int* PBC, int n_elems){
 	std::default_random_engine seed;
 	// std::normal_distribution<float> generator(L_MEAN, L_STD);
 	std::uniform_real_distribution<float> generator(L_MEAN - L_STD, L_MEAN + L_STD);
@@ -293,7 +293,7 @@ void __init__(float* L, int* m, float* damage, float* sacdamage, bool* PBC, int 
 		L[i] -= m[i]*hidden(seed); 
 		sacdamage[i] = 0.0;
 		damage[i] = 0.0;
-		PBC[i] = false;
+		PBC[i] = 0;
 	}	
 }
 

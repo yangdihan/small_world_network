@@ -137,13 +137,14 @@ void Network::malloc_network(string& fname){
 
 	/** modified by Dihan
 	 *	alloacte memory for potential additional chains for arrays storing edges, forces, L, PBC, damage
+	 *	for R and forces, also allocate RANDOM_LONG+RANDOM_Y more memory for ghost nodes
 	 */
-	R = (float*)malloc(n_nodes*DIM*sf);
+	R = (float*)malloc((RANDOM_LONG+RANDOM_Y+n_nodes)*DIM*sf);
 	edges = (int*)malloc((RANDOM_LONG+RANDOM_Y+n_elems)*2*si);
-	forces = (float*)malloc(n_nodes*DIM*sf);
+	forces = (float*)malloc((RANDOM_LONG+RANDOM_Y+n_nodes)*DIM*sf);
 	damage = (float*)malloc((RANDOM_LONG+RANDOM_Y+n_elems)*sf);
 	L = (float* )malloc((RANDOM_LONG+RANDOM_Y+n_elems)*sf);
-	PBC = (bool* )malloc((RANDOM_LONG+RANDOM_Y+n_elems)*sb);
+	PBC = (int* )malloc((RANDOM_LONG+RANDOM_Y+n_elems)*si);
 
 	// 	initialise n_xside for side nodes
 	n_rside = 0;
@@ -304,7 +305,7 @@ void Network::add_long_range_egdes_random(int n_add, string folder_name){
 		logger<<"\n";
 
 		// update PBC;
-		PBC[n_elems] =  false;
+		PBC[n_elems] =  0;
 
 		// update damage
 		damage[n_elems] = 0;
@@ -380,7 +381,7 @@ void Network::add_long_range_egdes_y(int n_add, string folder_name){
 		logger<< s <<"\t";
 		logger<< L[n_elems];
 		logger<<"\n";
-		PBC[n_elems] =  false;
+		PBC[n_elems] =  0;
 		damage[n_elems] = 0;
 		n_elems++;
 
@@ -394,6 +395,158 @@ void Network::add_long_range_egdes_y(int n_add, string folder_name){
 }
 
 
+// ghost node version
+void Network::add_long_range_egdes_ghost(int n_add, string folder_name){
+	if (n_add == 0){
+		return;
+	}
+	cout<<"Asked to add "<<n_add<<" more edges!\n";
+	int node1, node2;
+	float s = 0;
+
+	if(n_add >= n_elems/2){
+		cout<<"You're asking for too many long range bonds,"
+				" can't do it! I will add none and continue..."<<endl;
+	}
+	string fname = std::string(FLDR_STRING)+folder_name + "/add_link_tracker.txt";
+	ofstream logger;
+	logger.open(fname, ios::trunc|ios_base::out);
+	logger<< this->meanX <<"\t";
+	logger<< (this->meanX/this->meanXL);
+	logger<<"\n";
+	srand(time(NULL));
+
+	double pre_str_ct = 0;
+
+	this->n_gnodes = this->n_nodes;
+	// this->gNodes = new int[n_add];
+
+
+	for(int i = 0; i < n_add; i++){
+		while(s < 20*meanX){ 
+			node1 = rand()%(n_nodes - 4) + 4;
+			node2 = rand()%(n_nodes - 4) + 4;
+			s = dist(&R[node1*DIM], &R[node2*DIM]);
+		}
+
+		float x1 = R[node1*DIM + 0];
+		float y1 = R[node1*DIM + 1];
+		float x2 = R[node2*DIM + 0];
+		float y2 = R[node2*DIM + 1];
+
+		PBC[n_elems] =  0;
+
+		if (MAXBOUND_Y - y1 < 100){ //node1 too close to top
+			R[n_nodes*DIM + 0] = x1;
+			R[n_nodes*DIM + 1] = 2*MAXBOUND_Y-y1;
+			node1 = n_nodes;
+			this->n_nodes += 1;
+			cout << "create a ghost node" << endl;
+		}
+		if (MAXBOUND_Y - y2 < 100){ //node2 too close to top
+			R[n_nodes*DIM + 0] = x2;
+			R[n_nodes*DIM + 1] = 2*MAXBOUND_Y-y2;
+			node2 = n_nodes;
+			this->n_nodes += 1;
+			cout << "create a ghost node" << endl;
+		}
+		if (y1 < 100){ //node1 too close to bottom
+			R[n_nodes*DIM + 0] = x1;
+			R[n_nodes*DIM + 1] = -y1;
+			node1 = n_nodes;
+			this->n_nodes += 1;
+			cout << "create a ghost node" << endl;
+		}
+		if (y2 < 100){ //node2 too close to bottom
+			R[n_nodes*DIM + 0] = x2;
+			R[n_nodes*DIM + 1] = -y2;
+			node2 = n_nodes;
+			this->n_nodes += 1;
+			cout << "create a ghost node" << endl;
+		}
+
+
+		if (MAXBOUND_X - x1 < 50){ //node1 too close to right
+			float target_x1 = MAXBOUND_X - x1;
+			for (int i=0; i<n_nodes; i++){
+				if (fabs(R[i*DIM+0]-target_x1)<5 && fabs(R[i*DIM+1]-y1)<5){
+					node1 = i;
+					break;
+				}
+			}
+			PBC[n_elems] = 2;
+			cout << "create a PBC node" << endl;
+		}
+		if (MAXBOUND_X - x2 < 50){ //node2 too close to right
+			float target_x2 = MAXBOUND_X - x2;
+			for (int i=0; i<n_nodes; i++){
+				if (fabs(R[i*DIM+0]-target_x2)<5 && fabs(R[i*DIM+1]-y2)<5){
+					node2 = i;
+					break;
+				}
+			}
+			PBC[n_elems] = 2;
+			cout << "create a PBC node" << endl;
+		}
+		if (x1 < 50){ //node1 too close to left
+			float target_x1 = MAXBOUND_X - x1;
+			for (int i=0; i<n_nodes; i++){
+				if (fabs(R[i*DIM+0]-target_x1)<5 && fabs(R[i*DIM+1]-y1)<5){
+					node1 = i;
+					break;
+				}
+			}
+			PBC[n_elems] = 2;
+			cout << "create a PBC node" << endl;
+		}
+		if (x2 < 50){ //node2 too close to left
+			float target_x2 = MAXBOUND_X - x2;
+			for (int i=0; i<n_nodes; i++){
+				if (fabs(R[i*DIM+0]-target_x2)<5 && fabs(R[i*DIM+1]-y2)<5){
+					node2 = i;
+					break;
+				}
+			}
+			PBC[n_elems] = 2;
+			cout << "create a PBC node" << endl;
+		}
+
+
+
+		edges[n_elems*2] = node1;
+		edges[n_elems*2 + 1] = node2;
+		L[n_elems] = ((1-PRESTRETCH)*s + PRESTRETCH*meanX)/meanXL;
+		pre_str_ct += s/L[n_elems];
+
+		logger<< node1 << ": " <<"\t";
+		logger<< R[node1*DIM + 0] <<"\t";
+		logger<< R[node1*DIM + 1] <<"\t";
+		logger<< node2 << ": " <<"\t";
+		logger<< R[node2*DIM + 0] <<"\t";
+		logger<< R[node2*DIM + 1] <<"\t";
+		logger<< s <<"\t";
+		logger<< L[n_elems];
+		logger<<"\n";
+
+		// update PBC;
+
+
+		// update damage
+		damage[n_elems] = 0;
+		n_elems++;
+
+		s = 0;
+	}
+
+    logger.close();
+    pre_str_ct /= n_add;
+    cout << "average additional link prestretch is "<<pre_str_ct<< endl;
+	cout<<"Stored long link info in "<<fname<<"!\n";
+
+}
+
+
+
 // ----------------------------------------------------------------------- 
 /// \brief Create patterned regions on this network
 ///	\param type (string) --> indicates the pattern type is "layer" or "spot" on this network
@@ -401,7 +554,7 @@ void Network::add_long_range_egdes_y(int n_add, string folder_name){
 ///	\param rate (float) --> indicates how many times sparser the patterned region will be
 // -----------------------------------------------------------------------
 void Network::patterning(string type, int region_number, double rate){
-	if (type == "none"){
+	if (type == "none" || type == "type2"){
 		return;
 	}
 
@@ -574,6 +727,18 @@ void Network::load_network(string& fname) {
 		cout<<"Number after new connections made: "<<n_elems<<endl;
 	}
 	cout<<__LINE__<<endl;
+	//creating the neighbor dictionary added by Yefei Si on 01.12.2018s
+	for(int i = 0; i < n_nodes; i++) {
+		neighbors[i] = new vector<int>;
+		for(int j = 0; j < n_elems; j++) {
+			if (edges[2*j] == i) {
+				neighbors[i]->push_back(edges[2*j+1]);
+			}
+			else if (edges[2*j+1] == i) {
+				neighbors[i]->push_back(edges[2*j]);
+			}
+		}
+	}
 }
 
 // ----------------------------------------------------------------------- 
@@ -602,7 +767,7 @@ void Network::copy(Network const & source) {
 	forces = (float*)malloc(n_nodes*DIM*sf);
 	damage = (float*)malloc((RANDOM_LONG+RANDOM_Y+n_elems)*sf);
 	L = (float* )malloc((RANDOM_LONG+RANDOM_Y+n_elems)*sf);
-	PBC = (bool* )malloc((RANDOM_LONG+RANDOM_Y+n_elems)*sb);
+	PBC = (int* )malloc((RANDOM_LONG+RANDOM_Y+n_elems)*si);
 	lsideNodes = (int* )malloc(n_lside*si);
 	rsideNodes = (int* )malloc(n_rside*si);
 	bsideNodes = (int* )malloc(n_bside*si);
@@ -665,7 +830,7 @@ void Network::make_edge_connections(float dely_allowed) {
 				//cout<<"Connected node "<<lnode<<" and "<<rnode<<"\n";
 				L[n_elems] = generator(seed);
 				damage[n_elems] = 0.0;
-				PBC[n_elems] = true;
+				PBC[n_elems] = 1;
 				n_elems += 1;
 			}
 		}
@@ -847,7 +1012,35 @@ void Network::plotNetwork(int iter_step, bool first_time, string folder_name){
 			}
 			
 			// check PBC_STATUS
-			if (PBC[j]) {
+			if (PBC[j]==2) {
+				// add PBC_vector to get new node position
+				float x1 = R[node1*DIM+0];
+				float x2 = R[node2*DIM+0];
+				float y1 = R[node1*DIM+1];
+				float y2 = R[node2*DIM+1];
+
+				if (x1<50){
+					r1[0] += MAXBOUND_X;
+				}
+				if (x1>MAXBOUND_X-50){
+					r1[0] -= MAXBOUND_X;
+				}
+				if (x2<50){
+					r2[0] += MAXBOUND_X;
+				}
+				if (x2>MAXBOUND_X-50){
+					r2[0] -= MAXBOUND_X;
+				}
+				s = dist(r1, r2);
+			}
+			else{
+				s = dist(r1, r2);
+			}
+
+
+
+
+			if (PBC[j]==1) {
 				// add PBC_vector to get new node position
 				#pragma unroll
 				for (k = 0; k < DIM; k++){
@@ -863,9 +1056,11 @@ void Network::plotNetwork(int iter_step, bool first_time, string folder_name){
 			c = s/L[j];
 			for(int d = 0; d<DIM; d++){
 					f<<R[node1*DIM+d]<<"\t";
-				}
-				f<<c<<endl;
-			if(!PBC[j]){
+			}
+			f<<c<<endl;
+
+
+			if(PBC[j]==0){
 				for(int d = 0; d<DIM; d++){
 					f<<R[node2*DIM+d]<<"\t";
 				}
@@ -876,6 +1071,8 @@ void Network::plotNetwork(int iter_step, bool first_time, string folder_name){
 				}				
 			}
 			f<<c<<endl<<endl;
+
+
 		}
 		f.close();
 	}
@@ -890,7 +1087,7 @@ void Network::plotNetwork(int iter_step, bool first_time, string folder_name){
 					f<<R[node1*DIM+d]<<"\t";
 				}
 				f<<c<<endl;
-			if(!PBC[i]){
+			if(PBC[i]==0){
 				for(int d = 0; d<DIM; d++){
 					f<<R[node2*DIM+d]<<"\t";
 				}
@@ -978,7 +1175,33 @@ void Network::plotFrames(int iter_step, bool first_time, string folder_name){
 			}
 			
 			// check PBC_STATUS
-			if (PBC[j]) {
+			if (PBC[j]==2) {
+				// add PBC_vector to get new node position
+				float x1 = R[node1*DIM+0];
+				float x2 = R[node2*DIM+0];
+				float y1 = R[node1*DIM+1];
+				float y2 = R[node2*DIM+1];
+
+				if (x1<50){
+					r1[0] += MAXBOUND_X;
+				}
+				if (x1>MAXBOUND_X-50){
+					r1[0] -= MAXBOUND_X;
+				}
+				if (x2<50){
+					r2[0] += MAXBOUND_X;
+				}
+				if (x2>MAXBOUND_X-50){
+					r2[0] -= MAXBOUND_X;
+				}
+				s = dist(r1, r2);
+			}
+			// else{
+			// 	s = dist(r1, r2);
+			// }
+
+			// check PBC_STATUS
+			if (PBC[j]==1) {
 				// add PBC_vector to get new node position
 				#pragma unroll
 				for (k = 0; k < DIM; k++){
@@ -987,51 +1210,100 @@ void Network::plotFrames(int iter_step, bool first_time, string folder_name){
 				// get force on node1 due to node2
 				s = dist(r1, r2);
 			}
-			else{
+			if (PBC[j]==0){
 				s = dist(r1, r2);
 			}
 		
 			c = s/L[j];
-			for(int d = 0; d<DIM; d++){
-					f<<R[node1*DIM+d]<<"\t";
-				}
-				f<<c<<endl;
-			if(!PBC[j]){
-				for(int d = 0; d<DIM; d++){
-					f<<R[node2*DIM+d]<<"\t";
-				}
-			}
-			else{
-				for(int d = 0; d<DIM; d++){
-					f<<(R[node1*DIM+d]+10)<<"\t";
-				}				
-			}
+			f<<r1[0]<<"\t";
+			f<<r1[1]<<"\t";
+			f<<c<<endl;
+			f<<r2[0]<<"\t";
+			f<<r2[1]<<"\t";
+			// for(int d = 0; d<DIM; d++){
+			// 		f<<R[node1*DIM+d]<<"\t";
+			// }
+			// f<<c<<endl;
+			// if(PBC[j]==0){
+			// 	for(int d = 0; d<DIM; d++){
+			// 		f<<R[node2*DIM+d]<<"\t";
+			// 	}
+			// }
+			// else{
+			// 	for(int d = 0; d<DIM; d++){
+			// 		f<<(R[node1*DIM+d]+10)<<"\t";
+			// 	}				
+			// }
 			f<<c<<endl<<endl;
 		}
 		f.close();
-	}
-	else{
-	for(int i = 0; i<n_elems; i++){
-		c = damage[i];
-		node1 = edges[2*i];
-		node2 = edges[2*i+1];
+	}else{
+		for(int i = 0; i<n_elems; i++){
+			c = damage[i];
+			node1 = edges[2*i];
+			node2 = edges[2*i+1];
 
-		if(node1!=-1 && node2!=-1){
-			for(int d = 0; d<DIM; d++){
-					f<<R[node1*DIM+d]<<"\t";
+			if(node1!=-1 && node2!=-1){
+				float r1[DIM];
+				float r2[DIM];
+				float x1;
+				float x2;
+				float y1;
+				float y2;
+				// read the positions
+				#pragma unroll
+				for(int k = 0; k<DIM; k++){
+					r1[k] = R[node1*DIM + k]; 
+					r2[k] = R[node2*DIM + k];
 				}
+				if (PBC[i]==2) {
+					// add PBC_vector to get new node position
+					x1 = R[node1*DIM+0];
+					x2 = R[node2*DIM+0];
+					y1 = R[node1*DIM+1];
+					y2 = R[node2*DIM+1];
+
+					if (x1<50){
+						r1[0] += MAXBOUND_X;
+					}
+					if (x1>MAXBOUND_X-50){
+						r1[0] -= MAXBOUND_X;
+					}
+					if (x2<50){
+						r2[0] += MAXBOUND_X;
+					}
+					if (x2>MAXBOUND_X-50){
+						r2[0] -= MAXBOUND_X;
+					}
+				}
+
+				// check PBC_STATUS
+				if (PBC[i]==1) {
+					// add PBC_vector to get new node position
+					#pragma unroll
+					for (int k = 0; k < DIM; k++){
+						r2[k] += PBC_vector[k];
+					}
+				}
+				f<<r1[0]<<"\t";
+				f<<r1[1]<<"\t";
 				f<<c<<endl;
-			if(!PBC[i]){
-				for(int d = 0; d<DIM; d++){
-					f<<R[node2*DIM+d]<<"\t";
-				}
-			}
-			else{
-				for(int d = 0; d<DIM; d++){
-					f<<(R[node1*DIM+d]+10)<<"\t";
-				}				
-			}
-		f<<c<<endl<<endl;
+				f<<r2[0]<<"\t";
+				f<<r2[1]<<"\t";
+				// for(int d = 0; d<DIM; d++){
+				// 		f<<R[node1*DIM+d]<<"\t";
+				// }
+				// f<<c<<endl;
+				// if(PBC[i]==0){
+				// 	for(int d = 0; d<DIM; d++){
+				// 		f<<r1[d]<<"\t";
+				// 	}
+				// }else{
+				// 	for(int d = 0; d<DIM; d++){
+				// 		f<<r2[d]<<"\t";
+				// 	}				
+				// }
+			f<<c<<endl<<endl;
 		}
 	}
 	f.close();
@@ -1070,15 +1342,15 @@ void Network::plotFrames(int iter_step, bool first_time, string folder_name){
 ///
 /// 
 // -----------------------------------------------------------------------
-int Network::get_current_edges(){
-	int n_elems_current = 0;
-	for(int i=0; i<n_elems; i++){
-		if(edges[i*2] != -1 && edges[i*2 + 1]!=-1){
-			n_elems_current += 1;
-		}
-	}
-	return n_elems_current;
-}
+// int Network::get_current_edges(){
+// 	int n_elems_current = 0;
+// 	for(int i=0; i<n_elems; i++){
+// 		if(edges[i*2] != -1 && edges[i*2 + 1]!=-1){
+// 			n_elems_current += 1;
+// 		}
+// 	}
+// 	return n_elems_current;
+// }
 
 
 // ----------------------------------------------------------------------- 
@@ -1087,16 +1359,16 @@ int Network::get_current_edges(){
 /// \param iter (int) --> the iteration index
 /// \param curr_n_edges (int) --> the number of remaining chains at this iteration
 // -----------------------------------------------------------------------
-void Network::get_edge_number(int* remain_chains, int iter, int curr_n_edges){
-	remain_chains[iter] = curr_n_edges;
-}
+// void Network::get_edge_number(int* remain_chains, int iter, int curr_n_edges){
+// 	remain_chains[iter] = curr_n_edges;
+// }
 
 // ----------------------------------------------------------------------- 
 /// \brief Prints out certain statistics of the network object.
 ///
 /// 
 // -----------------------------------------------------------------------
-bool Network::get_stats(){
+bool Network::get_stats(float* OPs, int* num_chains, int i){
 	
 	int node1, node2;
 	int j, k, id; // loop variables
@@ -1147,20 +1419,37 @@ bool Network::get_stats(){
 		 *	OP = 0.5*(3*(average of square)-1)
 		 */
 		s = dist(r1, r2);
-		// float mod_r1 = dist(r1, origin);
-		// float mod_r2 = dist(r2, origin);
 		if (s != 0){
-			float cos = fabs((r2[1]-r1[1])/s);
+			float cos = (r2[1]-r1[1])/s;
 			sum_cos_sq += cos*cos;
 		}
-		
+			// check PBC_STATUS
+			if (PBC[j]==2) {
+				// add PBC_vector to get new node position
+				float x1 = R[node1*DIM+0];
+				float x2 = R[node2*DIM+0];
+				float y1 = R[node1*DIM+1];
+				float y2 = R[node2*DIM+1];
 
-		// check PBC_STATUS
-		if (PBC[j]) {
+				if (x1<50){
+					r1[0] += MAXBOUND_X;
+				}
+				if (x1>MAXBOUND_X-50){
+					r1[0] -= MAXBOUND_X;
+				}
+				if (x2<50){
+					r2[0] += MAXBOUND_X;
+				}
+				if (x2>MAXBOUND_X-50){
+					r2[0] -= MAXBOUND_X;
+				}
+			}
+			if (PBC[j]==1) {
 			// add PBC_vector to get new node position
-			#pragma unroll
-			for (k = 0; k < DIM; k++){
-				r2[k] += PBC_vector[k];
+				#pragma unroll
+				for (k = 0; k < DIM; k++){
+					r2[k] += PBC_vector[k];
+				}
 			}
 			// check if L too short
 			s = dist(r1, r2);
@@ -1175,20 +1464,20 @@ bool Network::get_stats(){
 				shortage = s - L[j];
 			}
 		}
-		else{
-			// s = dist(r1, r2);
-			mean_x += s;
-			mean_t += s/L[j];
-			if(s>max_x){max_x =s;}
-			if(s/L[j]>max_t){max_t=s/L[j];}
-			var_x += s*s;
-			var_t += s*s/L[j]/L[j];
-			if(s >= 0.99*L[j]){
-				short_L++;
-				shortage = s - L[j];
-			}
-		}
-	}
+		// else{
+		// 	// s = dist(r1, r2);
+		// 	mean_x += s;
+		// 	mean_t += s/L[j];
+		// 	if(s>max_x){max_x =s;}
+		// 	if(s/L[j]>max_t){max_t=s/L[j];}
+		// 	var_x += s*s;
+		// 	var_t += s*s/L[j]/L[j];
+		// 	if(s >= 0.99*L[j]){
+		// 		short_L++;
+		// 		shortage = s - L[j];
+		// 	}
+		// }
+	
 	if(c<=0){
 		cout<<"No load bearing edges remain! Stopping simulation!\n";
 		return true;
@@ -1208,7 +1497,7 @@ bool Network::get_stats(){
 	this->meanX = mean_x;
 	// cout<<"node-node distance std_dev: "<<sqrt(var_x)<<endl;
 	// cout<<"node-node distance max: "<<max_x<<endl;
-	cout<<"\n";
+	// cout<<"\n";
 	// cout<<"node-node x/L mean: "<<mean_t<<endl;
 	this->meanXL = mean_t;
 	// cout<<"node-node x/L std_dev: "<<sqrt(var_t)<<endl;	
@@ -1221,7 +1510,9 @@ bool Network::get_stats(){
 	 */
 	sum_cos_sq /= c;
 	float OP = 0.5*(3*sum_cos_sq-1);
-	cout << "orientation parameter at this step is: "<< OP << endl;
+	// cout << "orientation parameter at this step is: "<< OP << endl;
+	num_chains[i] = c;
+	OPs[i] = OP;
 
 	if((float)c/(float)n_elems < 0.02){
 		cout<<"Too few edges remain in given mesh! Exiting...\n";
@@ -1278,9 +1569,35 @@ void Network::move_top_plate(){
 		node = tsideNodes[i];
 		#pragma unroll
 		for(int d=0; d<DIM; d++){
-			R[node*DIM + d] += TIME_STEP*vel[d]; 
+			// use half rate here
+			R[node*DIM + d] += 0.5*TIME_STEP*vel[d]; 
 		}
 	}
+
+	// move bottom as well with half rate
+	for(int i = 0; i<n_bside; i++){
+		node = bsideNodes[i];
+		#pragma unroll
+		for(int d=0; d<DIM; d++){
+			// use half rate here
+			R[node*DIM + d] -= 0.5*TIME_STEP*vel[d]; 
+		}
+	}
+
+	// move ghost nodes
+	if (GHOST){
+		for (int i = n_gnodes; i<n_nodes; i++){
+			for(int d=0; d<DIM; d++){
+				if (R[i*DIM + 1] > MAXBOUND_Y){
+					R[i*DIM + d] += 0.5*TIME_STEP*vel[d]; 
+				}
+				if (R[i*DIM + 1] < 0){
+					R[i*DIM + d] -= 0.5*TIME_STEP*vel[d]; 
+				}
+			}
+		}
+	}
+	
 }
 
 
@@ -1326,29 +1643,58 @@ void Network::get_forces(bool update_damage) {
 		}
 		
 		// check PBC_STATUS
-		if (PBC[j]) {
+		if (PBC[j]==2) {
 			// add PBC_vector to get new node position
-			#pragma unroll
-			for (k = 0; k < DIM; k++){
-				r2[k] += PBC_vector[k];
+			float x1 = R[node1*DIM+0];
+			float x2 = R[node2*DIM+0];
+			float y1 = R[node1*DIM+1];
+			float y2 = R[node2*DIM+1];
+
+			if (x1<50){
+				r1[0] += MAXBOUND_X;
 			}
-			// get force on node1 due to node2
+			if (x1>MAXBOUND_X-50){
+				r1[0] -= MAXBOUND_X;
+			}
+			if (x2<50){
+				r2[0] += MAXBOUND_X;
+			}
+			if (x2>MAXBOUND_X-50){
+				r2[0] -= MAXBOUND_X;
+			}
 			s = dist(r1, r2);
 			unitvector(rhat, r1, r2);
 			force = force_wlc(s, L[j]);
 			if(force == 999999){edges[j*2] = -1; edges[j*2 +1] = -1; force =0.0;}
 			convert_to_vector(edge_force, force, rhat);
+		}
+
+
+		if (PBC[j]==1) {
+			// add PBC_vector to get new node position
+			#pragma unroll
+			for (k = 0; k < DIM; k++){
+				r2[k] += PBC_vector[k];
+			}
+			s = dist(r1, r2);
+			unitvector(rhat, r1, r2);
+			force = force_wlc(s, L[j]);
+			if(force == 999999){edges[j*2] = -1; edges[j*2 +1] = -1; force =0.0;}
+			convert_to_vector(edge_force, force, rhat);
+		}
+			// get force on node1 due to node2
+
 			// subtract back the PBC_vector to get original node position
 			// #pragma unroll
 			// for (k = 0; k < DIM; k++){
 			// 	r2[k] -= PBC_vector[k];
 			// }
-		}
-		else{
+		
+		if (PBC[j]==0){
 			s = dist(r1, r2);
 
 			/** add by Dihan
-			 *	Critical edge case:
+			 *	Critical edge case!!!
 			 *	when two end node of one element overlap, update the force with a zero vector
 			 *	aka not processing the update part.
 			 */
@@ -1358,6 +1704,38 @@ void Network::get_forces(bool update_damage) {
 
 			unitvector(rhat, r1, r2);
 			force = force_wlc(s, L[j]);
+			// if (j == 520 && update_damage==true){
+			// 	cout << s/L[j] << "\t" << force << "\t";
+			// }
+			// if (j == 630 && update_damage==true){
+			// 	cout << s/L[j] << "\t" << force << "\t";
+			// }
+			// if (j == 740 && update_damage==true){
+			// 	cout << s/L[j] << "\t" << force << "\t";
+			// }
+			// if (j == 850 && update_damage==true){
+			// 	cout << s/L[j] << "\t" << force << "\t";
+			// }
+			// if (j == 960 && update_damage==true){
+			// 	cout << s/L[j] << "\t" << force << "\n";
+			// }
+			
+			// add by Dihan: another way to patterning
+			if (PATTERN_TYPE == "type2"){
+				double unit_thick = MAXBOUND_Y/(PATTERN_NUM+(PATTERN_NUM+1)*PATTERN_RATE);
+				for (int i=0; i<PATTERN_NUM; i++){// in one region
+					// check all elems, delete and record
+
+					double cur_ini_y = R[2*edges[2*j+0]+1];
+					double cur_end_y = R[2*edges[2*j+1]+1];
+					double region_low = (i+1)*PATTERN_RATE*unit_thick + i*unit_thick;
+					double region_top = region_low+unit_thick;
+					if ((cur_ini_y>region_low && cur_ini_y<region_top) && (cur_end_y>region_low && cur_end_y<region_top)){
+						force = force_wlc2(s, L[j],PATTERN_RATE);
+					}
+					
+				}
+			}
 			// if(force == 999999){edges[j*2] = -1; edges[j*2 +1] = -1; force =0.0;}
 			convert_to_vector(edge_force, force, rhat);
 		}
@@ -1373,19 +1751,36 @@ void Network::get_forces(bool update_damage) {
 		if (update_damage){
 			if(RATE_DAMAGE){
 				damage[j] += kfe(force)*TIME_STEP;
-				if(damage[j] > 1.0){
-					cout<<"RATE_DAMAGE: Breaking bond between "
-					<<edges[j*2]<<" and "<<edges[2*j +1]<<" F, s/L = "<<force \
-					<<", "<<s/L[j]<<"s: "<<s<<", L: "<<L[j]<<endl;
+
+				// might need to change the threshold here to allow WLC model perform the non-linearity
+				if(damage[j] > 10){
+					// if (j == 520){
+					// 	cout << "damange: "<< damage[j] << "\n";
+					// 	cout << "breaking stretch: "<< s/L[j] << "\n";
+					// }
+					// if (j == 630){
+					// 	cout << "damange: "<< damage[j] << "\n";
+					// 	cout << "breaking stretch: "<< s/L[j] << "\n";
+					// }
+					// if (j == 740){
+					// 	cout << "damange: "<< damage[j] << "\n";
+					// 	cout << "breaking stretch: "<< s/L[j] << "\n";
+					// }
+					// if (j == 850){
+					// 	cout << "damange: "<< damage[j] << "\n";
+					// 	cout << "breaking stretch: "<< s/L[j] << "\n";
+					// }
+					// if (j == 960){
+					// 	cout << "damange: "<< damage[j] << "\n";
+					// 	cout << "breaking stretch: "<< s/L[j] << "\n";
+					// }
+			
 					edges[j*2] = -1; edges[j*2+1] = -1;
 				}
 			}
 			else{
 				damage[j] = s/L[j];
 				if(damage[j] > 0.9){
-					cout<<"Breaking bond between "
-					<<edges[j*2]<<" and "<<edges[2*j +1]<<" F, s/L = "<<force \
-					<<", "<<s/L[j]<<endl;
 					edges[j*2] = -1; edges[j*2+1] = -1;
 				}
 			}
@@ -1605,3 +2000,29 @@ void Network::dump(int iter, bool first_time){
     logger.close();
 	cout<<"Dumped everything in "<<fname<<"!\n";
 }
+
+// find_clustering added by Yefei Si on 03.12.2018
+double Network::find_clustering(int node) {
+	double num = neighbors[node]->size();
+	double denominator = num*(num-1)/2;
+	double pair = 0;
+	for(int i = 0; i < num - 1; i++) {
+		vector<int>* nei_ptr = neighbors[neighbors[node]->at(i)];
+		for (int j = i+1; j < num; j++) {
+			for (int k = 0; k < nei_ptr->size(); k++) {
+				if (nei_ptr->at(k) == neighbors[node]->at(j)) {
+					pair = pair + 1;
+				}
+			}
+		}
+	}
+	double result = pair/denominator;
+	return result;
+}
+
+/** add by Dihan
+ *	calculate a stochastic cluster coefficient for the network
+ *
+ */
+
+
